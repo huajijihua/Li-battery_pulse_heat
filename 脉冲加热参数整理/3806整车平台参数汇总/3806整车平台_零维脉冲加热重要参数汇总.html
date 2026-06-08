@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3806整车平台零维脉冲加热重要参数汇总</title>
+<style>
+
+    :root { color-scheme: light; }
+    body { margin: 0; font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; color: #172033; background: #f6f8fb; }
+    header { background: #17365d; color: white; padding: 28px 40px; }
+    h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: 0; }
+    .subtitle { margin: 0; color: #dbe8f6; font-size: 14px; line-height: 1.6; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; }
+    section { background: white; border: 1px solid #d9e2ef; border-radius: 6px; margin: 0 0 22px; overflow: hidden; }
+    h2 { margin: 0; padding: 14px 18px; font-size: 18px; color: #17365d; background: #eef4fb; border-bottom: 1px solid #d9e2ef; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border-bottom: 1px solid #e7edf5; border-right: 1px solid #e7edf5; padding: 10px 12px; vertical-align: top; line-height: 1.45; word-break: break-word; }
+    th { background: #1f4e78; color: white; font-weight: 700; text-align: left; }
+    tr:nth-child(even) td { background: #fbfdff; }
+    td:first-child { font-weight: 600; color: #1f3f63; }
+    .note { margin: 10px 0 0; font-size: 13px; color: #5c6b7a; }
+    @media print { body { background: white; } main { max-width: none; padding: 0; } section { break-inside: avoid; } }
+
+</style>
+</head>
+<body>
+<header>
+<h1>3806整车平台零维脉冲加热重要参数汇总</h1>
+<p class="subtitle">研究对象：192S2P电池组 + 频率开关 + 双电机电感。用途：技术原理级可行性论证；当前脉冲加热频率上限按堵转载频1.25kHz处理。</p>
+</header>
+<main>
+<section><h2>3806整车平台零维脉冲加热参数汇总</h2>
+<table>
+<thead><tr>
+<th>项目</th>
+<th>参数/数值</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>文件目的</td>
+<td>整理已知重要参数</td>
+<td>用于后续建立零维脉冲加热模型和原理级可行性论证</td>
+</tr>
+<tr>
+<td>研究边界</td>
+<td>技术原理级</td>
+<td>不做量产控制器软件模式、诊断策略、保护阈值的产品级判断</td>
+</tr>
+<tr>
+<td>等效结构</td>
+<td>电池组 - 频率开关 - 电机电感</td>
+<td>重点研究脉冲电流、内阻发热、升温速率、SOC消耗和低温回充约束</td>
+</tr>
+<tr>
+<td>核心整车拓扑</td>
+<td>192S2P电池组 + 2台电机</td>
+<td>每台电机D轴电感约0.26 mH</td>
+</tr>
+<tr>
+<td>文件生成时间</td>
+<td>2026-05-12</td>
+<td>基于当前已获得资料、研发沟通信息和模型口径更新整理</td>
+</tr>
+<tr>
+<td>本次新增信息</td>
+<td>堵转载频上限1.25kHz；550Arms/约778Apeak；机控90%、控制器96%效率</td>
+<td>用于零维模型频率边界、电流限值和电池外电器损耗估算</td>
+</tr>
+</tbody></table></section>
+<section><h2>整车平台情况</h2>
+<table>
+<thead><tr>
+<th>项目</th>
+<th>参数/数值</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>车型</td>
+<td>3806型纯电卡车</td>
+<td>总布置参数文件</td>
+</tr>
+<tr>
+<td>驱动形式</td>
+<td>6x4</td>
+<td>J6G驾驶室</td>
+</tr>
+<tr>
+<td>研究目标</td>
+<td>低温脉冲加热技术原理可行性论证</td>
+<td>以后续零维模型计算为主</td>
+</tr>
+<tr>
+<td>电池包</td>
+<td>宁德时代L324D06</td>
+<td>4个相同电池包</td>
+</tr>
+<tr>
+<td>电池包连接</td>
+<td>2串2并</td>
+<td>整车形成192S2P电芯组合</td>
+</tr>
+<tr>
+<td>电驱系统</td>
+<td>两根解放自主电驱桥</td>
+<td>每根电驱桥1台电机</td>
+</tr>
+<tr>
+<td>电机型号</td>
+<td>CAM255PT52</td>
+<td>当前已获得的电机型号</td>
+</tr>
+<tr>
+<td>单台电机D轴电感</td>
+<td>约0.26 mH</td>
+<td>当前零维模型核心电机参数</td>
+</tr>
+<tr>
+<td>多合一/控制器</td>
+<td>9335020-3806-C0/C00</td>
+<td>版本后缀需后续统一；已获得618V、450-750V、正常运行3.3-4kHz、堵转载频上限1.25kHz、550Arms等信息</td>
+</tr>
+<tr>
+<td>正常运行开关频率</td>
+<td>3.3-4.0 kHz</td>
+<td>来自研发沟通；正常运行频率，不作为脉冲加热上限</td>
+</tr>
+<tr>
+<td>堵转/脉冲加热频率上限</td>
+<td>1.25 kHz</td>
+<td>低于正常运行频率也可以；脉冲加热控制器侧频率上限当前按堵转载频处理</td>
+</tr>
+<tr>
+<td>单台电机/控制器RMS电流</td>
+<td>550 Arms</td>
+<td>用于单支路RMS能力边界</td>
+</tr>
+<tr>
+<td>单台电机/控制器峰值电流</td>
+<td>约778 Apeak</td>
+<td>按550×√2=777.8A折算，用于单支路峰值边界</td>
+</tr>
+<tr>
+<td>电机及控制器系统平均效率</td>
+<td>90%</td>
+<td>用于估算电池以外电器损耗，不替代后续损耗地图</td>
+</tr>
+<tr>
+<td>控制器平均效率</td>
+<td>96%</td>
+<td>电机侧平均效率可由90%/96%≈93.75%反推</td>
+</tr>
+</tbody></table></section>
+<section><h2>电池系统关键参数</h2>
+<table>
+<thead><tr>
+<th>层级</th>
+<th>串并联</th>
+<th>数量</th>
+<th>标称电压</th>
+<th>容量</th>
+<th>标称能量</th>
+<th>质量</th>
+<th>备注</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>单体</td>
+<td>1S1P</td>
+<td>384颗/车</td>
+<td>3.22 V</td>
+<td>324 Ah</td>
+<td>约1.04 kWh</td>
+<td>5.55 kg/颗</td>
+<td>CATL 324Ah磷酸铁锂电芯</td>
+</tr>
+<tr>
+<td>单包</td>
+<td>96S1P</td>
+<td>4包/车</td>
+<td>309.12 V</td>
+<td>324 Ah</td>
+<td>100.15 kWh</td>
+<td>622±18.6 kg/包</td>
+<td>L324D06，液冷</td>
+</tr>
+<tr>
+<td>整车</td>
+<td>192S2P</td>
+<td>1套</td>
+<td>618.24 V</td>
+<td>648 Ah</td>
+<td>400.62 kWh</td>
+<td>约2488 kg</td>
+<td>4包2串2并</td>
+</tr>
+<tr>
+<td>电芯总质量</td>
+<td>-</td>
+<td>384颗</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>约2131 kg</td>
+<td>仅电芯质量，不含箱体、冷板、线束等</td>
+</tr>
+</tbody></table></section>
+<section><h2>电芯规格和安全边界</h2>
+<table>
+<thead><tr>
+<th>项目</th>
+<th>参数/数值</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>电芯体系</td>
+<td>磷酸铁锂</td>
+<td>电池包检验报告/电芯规格书</td>
+</tr>
+<tr>
+<td>典型/最小容量</td>
+<td>324 Ah</td>
+<td>25±2℃，1C，新鲜态</td>
+</tr>
+<tr>
+<td>标称电压</td>
+<td>3.22 V</td>
+<td></td>
+</tr>
+<tr>
+<td>工作电压</td>
+<td>&gt;0℃：2.5-3.65 V；≤0℃：2.0-3.65 V</td>
+<td>电芯规格书</td>
+</tr>
+<tr>
+<td>1 kHz阻抗</td>
+<td>0.21±0.06 mΩ</td>
+<td>新鲜态，40%SOC</td>
+</tr>
+<tr>
+<td>标准充电</td>
+<td>0-80%SOC 1C；80-90% 0.8C；90-95% 0.565C；90-100% 0.33C</td>
+<td>25±2℃</td>
+</tr>
+<tr>
+<td>连续最大充电电流</td>
+<td>1C</td>
+<td>25±2℃，≤80%SOC</td>
+</tr>
+<tr>
+<td>连续最大放电电流</td>
+<td>1C</td>
+<td>电芯规格书</td>
+</tr>
+<tr>
+<td>充电工作温度</td>
+<td>-5-65℃</td>
+<td>规格书；具体低温策略以窗口表/模型约束为准</td>
+</tr>
+<tr>
+<td>放电工作温度</td>
+<td>-35-65℃</td>
+<td>规格书</td>
+</tr>
+<tr>
+<td>30s脉冲充放电边界</td>
+<td>规格书2.4节；50%SOC时-10℃回充-0.30C、放电1.20C</td>
+<td>30s短时窗口比60s窗口更宽，-10℃可按短时回充能力纳入策略扫描</td>
+</tr>
+<tr>
+<td>低温容量</td>
+<td>0℃≥85%；-20℃≥75%</td>
+<td>1C，2.0-3.65 V，基于324Ah</td>
+</tr>
+<tr>
+<td>循环寿命</td>
+<td>≥3500次</td>
+<td>25℃，1C/1C，衰减至80%</td>
+</tr>
+</tbody></table></section>
+<section><h2>内阻数据及整车等效折算</h2>
+<table>
+<thead><tr>
+<th>SOC</th>
+<th>25℃单体1s内阻</th>
+<th>-20℃单体1s内阻</th>
+<th>25℃整车192S2P等效</th>
+<th>-20℃整车192S2P等效</th>
+<th>备注</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>90%</td>
+<td>0.301 mΩ</td>
+<td>1.939 mΩ</td>
+<td>28.90 mΩ</td>
+<td>186.14 mΩ</td>
+<td>来自AD02电芯窗口表</td>
+</tr>
+<tr>
+<td>50%</td>
+<td>0.325 mΩ</td>
+<td>2.067 mΩ</td>
+<td>31.20 mΩ</td>
+<td>198.43 mΩ</td>
+<td>建议作为典型模型点</td>
+</tr>
+<tr>
+<td>20%</td>
+<td>0.345 mΩ</td>
+<td>2.148 mΩ</td>
+<td>33.12 mΩ</td>
+<td>206.21 mΩ</td>
+<td></td>
+</tr>
+<tr>
+<td>10%</td>
+<td>0.349 mΩ</td>
+<td>2.187 mΩ</td>
+<td>33.50 mΩ</td>
+<td>209.95 mΩ</td>
+<td></td>
+</tr>
+<tr>
+<td>计算关系</td>
+<td>R_pack = R_cell * Ns / Np</td>
+<td>整车Ns=192，Np=2</td>
+<td>-</td>
+<td>-</td>
+<td>用于零维模型的电池欧姆发热估算</td>
+</tr>
+</tbody></table></section>
+<section><h2>低温电流窗口示例（50%SOC，60s）</h2>
+<table>
+<thead><tr>
+<th>温度</th>
+<th>60s脉冲回充-单体</th>
+<th>60s脉冲回充-整车2P</th>
+<th>60s脉冲放电-单体</th>
+<th>60s脉冲放电-整车2P</th>
+<th>模型含义</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>-10℃</td>
+<td>0 A</td>
+<td>0 A</td>
+<td>388.8 A</td>
+<td>777.6 A</td>
+<td>回充极严，常规能量往返脉冲受限</td>
+</tr>
+<tr>
+<td>-5℃</td>
+<td>97.2 A</td>
+<td>194.4 A</td>
+<td>690.1 A</td>
+<td>1380.2 A</td>
+<td>回充侧限制显著小于放电侧</td>
+</tr>
+<tr>
+<td>0℃</td>
+<td>113.4 A</td>
+<td>226.8 A</td>
+<td>706.3 A</td>
+<td>1412.6 A</td>
+<td>可作为低温启动后阶段约束</td>
+</tr>
+<tr>
+<td>5℃</td>
+<td>136.1 A</td>
+<td>272.2 A</td>
+<td>729.0 A</td>
+<td>1458.0 A</td>
+<td></td>
+</tr>
+<tr>
+<td>10℃</td>
+<td>261.9 A</td>
+<td>523.8 A</td>
+<td>861.8 A</td>
+<td>1723.6 A</td>
+<td>温度升高后回充窗口明显放宽</td>
+</tr>
+<tr>
+<td>原则</td>
+<td>负向/回充电流优先按更严边界控制</td>
+<td>正向/放电电流可参考放电窗口</td>
+<td>I_peak管约束</td>
+<td>I_rms管发热</td>
+<td>60s可作为保守长时边界；30s短时窗口见05b工作表</td>
+</tr>
+</tbody></table></section>
+<section><h2>30s脉冲电流窗口补充（50%SOC，电芯规格书）</h2>
+<table>
+<thead><tr>
+<th>温度</th>
+<th>30s回充C-rate</th>
+<th>30s回充-单体</th>
+<th>30s回充-整车2P</th>
+<th>30s放电C-rate</th>
+<th>30s放电-单体</th>
+<th>30s放电-整车2P</th>
+<th>建模含义</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>-10℃</td>
+<td>-0.30C</td>
+<td>97.2 A</td>
+<td>194.4 A</td>
+<td>1.20C</td>
+<td>388.8 A</td>
+<td>777.6 A</td>
+<td>30s规格书允许短时回充，区别于60s表的0A回充边界</td>
+</tr>
+<tr>
+<td>-5℃</td>
+<td>-0.39C</td>
+<td>126.4 A</td>
+<td>252.7 A</td>
+<td>2.13C</td>
+<td>690.1 A</td>
+<td>1380.2 A</td>
+<td>短时回充窗口较60s放宽</td>
+</tr>
+<tr>
+<td>0℃</td>
+<td>-0.46C</td>
+<td>149.0 A</td>
+<td>298.1 A</td>
+<td>2.18C</td>
+<td>706.3 A</td>
+<td>1412.6 A</td>
+<td>可作为低温启动后短时脉冲上限</td>
+</tr>
+<tr>
+<td>5℃</td>
+<td>-0.54C</td>
+<td>175.0 A</td>
+<td>349.9 A</td>
+<td>2.25C</td>
+<td>729.0 A</td>
+<td>1458.0 A</td>
+<td></td>
+</tr>
+<tr>
+<td>10℃</td>
+<td>-1.05C</td>
+<td>340.2 A</td>
+<td>680.4 A</td>
+<td>2.66C</td>
+<td>861.8 A</td>
+<td>1723.6 A</td>
+<td>温度升高后30s回充窗口明显放宽</td>
+</tr>
+<tr>
+<td>原则</td>
+<td>回充方向为负</td>
+<td>表内电流按幅值列示</td>
+<td>整车2P=单体×2</td>
+<td>放电方向为正</td>
+<td>按324Ah折算</td>
+<td>用于I_peak约束</td>
+<td>建模时应按脉冲持续时间分别选择30s/60s限值，不能只用60s边界否定-10℃短时回充</td>
+</tr>
+</tbody></table></section>
+<section><h2>电机与等效电感</h2>
+<table>
+<thead><tr>
+<th>工况</th>
+<th>电机数量</th>
+<th>单台电机Ld</th>
+<th>电池侧等效电感</th>
+<th>用途</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>单电机参与</td>
+<td>1</td>
+<td>0.26 mH</td>
+<td>0.26 mH</td>
+<td>保守对照</td>
+<td>用于评价单桥/单电机可形成的脉冲电流</td>
+</tr>
+<tr>
+<td>双电机同相参与</td>
+<td>2</td>
+<td>0.26 mH</td>
+<td>约0.13 mH</td>
+<td>主研究方案</td>
+<td>两台电机并联分担能量交换</td>
+</tr>
+<tr>
+<td>双电机降额参与</td>
+<td>2</td>
+<td>0.26 mH</td>
+<td>约0.13 mH</td>
+<td>低温受限阶段策略扫描</td>
+<td>电流限值按策略另设</td>
+</tr>
+<tr>
+<td>理想电流变化率</td>
+<td>单电机</td>
+<td>di/dt≈V/L</td>
+<td>618V/0.26mH≈2.38 kA/ms</td>
+<td>量级判断</td>
+<td>实际值需受占空比、电压利用率、电阻和控制策略影响</td>
+</tr>
+<tr>
+<td>理想电流变化率</td>
+<td>双电机等效</td>
+<td>di/dt≈V/L_eq</td>
+<td>618V/0.13mH≈4.76 kA/ms</td>
+<td>量级判断</td>
+<td>仅代表电池侧等效，不代表单机电感变化</td>
+</tr>
+</tbody></table></section>
+<section><h2>零维模型输入和输出建议</h2>
+<table>
+<thead><tr>
+<th>类别</th>
+<th>变量/参数</th>
+<th>建议取值或处理</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>已知实车参数</td>
+<td>电池串并联</td>
+<td>192S2P</td>
+<td>4个96S1P电池包，2串2并</td>
+</tr>
+<tr>
+<td>已知实车参数</td>
+<td>整车电压/容量/能量</td>
+<td>618.24V / 648Ah / 400.62kWh</td>
+<td>标称值</td>
+</tr>
+<tr>
+<td>已知实车参数</td>
+<td>电机电感</td>
+<td>单机0.26mH；双机等效0.13mH</td>
+<td>主方案用双机等效</td>
+</tr>
+<tr>
+<td>电池参数</td>
+<td>OCV曲线</td>
+<td>采用AD02窗口表静态/动态OCV</td>
+<td>后续可导入完整表</td>
+</tr>
+<tr>
+<td>电池参数</td>
+<td>内阻</td>
+<td>按T/SOC插值；初版可用25℃和-20℃点</td>
+<td>重点影响I²R发热</td>
+</tr>
+<tr>
+<td>电池参数</td>
+<td>低温电流窗口</td>
+<td>30s/60s限值分开建表；短时脉冲可参考30s规格书</td>
+<td>50%SOC时-10℃ 30s回充为-0.30C，60s边界仍可作为保守约束</td>
+</tr>
+<tr>
+<td>热模型</td>
+<td>热容量</td>
+<td>优先按整包质量约2488kg估算</td>
+<td>比热需做假设或参数扫描</td>
+</tr>
+<tr>
+<td>控制变量</td>
+<td>频率</td>
+<td>默认扫描100-1250Hz；上限按堵转载频1.25kHz；3.3-4kHz仅作为正常运行背景</td>
+<td>当前脉冲加热控制器侧频率上限可能只有1.25kHz，应避免继续按3.3-4kHz作为默认上限</td>
+</tr>
+<tr>
+<td>控制变量</td>
+<td>占空比</td>
+<td>核心优化变量</td>
+<td>用于控制回充峰值和I_rms</td>
+</tr>
+<tr>
+<td>策略变量</td>
+<td>脉冲形式</td>
+<td>对称、非对称、回充限流</td>
+<td>用于对比原理可行性</td>
+</tr>
+<tr>
+<td>输出指标</td>
+<td>升温速率/升温时间</td>
+<td>dT/dt = P_net/C_th</td>
+<td>P_net需考虑电池热、损耗和散热</td>
+</tr>
+<tr>
+<td>输出指标</td>
+<td>电流指标</td>
+<td>I_peak、I_rms、回充峰值</td>
+<td>I_peak管约束，I_rms管发热</td>
+</tr>
+<tr>
+<td>输出指标</td>
+<td>能量指标</td>
+<td>SOC消耗、累计电能</td>
+<td>评价整车预热代价</td>
+</tr>
+<tr>
+<td>控制变量</td>
+<td>电机电流边界</td>
+<td>单台550Arms；峰值约778Apeak</td>
+<td>RMS用于热/能力边界，峰值用于器件和脉冲窗口边界</td>
+</tr>
+<tr>
+<td>损耗模型</td>
+<td>电池外电器损耗</td>
+<td>机控平均效率90%；控制器平均效率96%</td>
+<td>零维模型中用于估算电机/控制器等效损耗；后续可用实测损耗地图替换</td>
+</tr>
+</tbody></table></section>
+<section><h2>后续建议扫描变量</h2>
+<table>
+<thead><tr>
+<th>变量</th>
+<th>建议水平/范围</th>
+<th>用途</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>初始温度</td>
+<td>-20℃、-10℃、0℃</td>
+<td>评价低温启动难度</td>
+</tr>
+<tr>
+<td>初始SOC</td>
+<td>20%、50%、80%</td>
+<td>评价SOC对内阻和电流窗口影响</td>
+</tr>
+<tr>
+<td>电机参与数量</td>
+<td>单电机、双电机</td>
+<td>比较保守与主方案</td>
+</tr>
+<tr>
+<td>等效电感</td>
+<td>0.26mH、0.13mH</td>
+<td>对应单机/双机</td>
+</tr>
+<tr>
+<td>频率</td>
+<td>100-1250Hz；对照记录3.3-4kHz正常运行范围</td>
+<td>1.25kHz为当前脉冲加热控制频率上限；频率影响纹波、峰值和加热功率</td>
+</tr>
+<tr>
+<td>占空比</td>
+<td>参数扫描</td>
+<td>限制回充侧电流并优化I_rms</td>
+</tr>
+<tr>
+<td>脉冲持续时间</td>
+<td>30s、60s</td>
+<td>区分短时放宽边界和保守长时边界</td>
+</tr>
+<tr>
+<td>脉冲策略</td>
+<td>对称/非对称/回充限流</td>
+<td>体现低温回充更苛刻的边界</td>
+</tr>
+<tr>
+<td>等效比热</td>
+<td>参数扫描</td>
+<td>热容量不确定性分析</td>
+</tr>
+<tr>
+<td>环境散热</td>
+<td>绝热/弱散热/经验散热</td>
+<td>判断升温时间敏感性</td>
+</tr>
+<tr>
+<td>电流限值</td>
+<td>550Arms、约778Apeak；叠加30s/60s电池窗口</td>
+<td>同时检查单支路能力和Pack低温回充/放电窗口</td>
+</tr>
+<tr>
+<td>外部电器损耗</td>
+<td>机控90%、控制器96%；后续替换损耗地图</td>
+<td>影响SOC消耗和系统效率，不直接进入电池热容</td>
+</tr>
+</tbody></table></section>
+<section><h2>数据来源和待补说明</h2>
+<table>
+<thead><tr>
+<th>类别</th>
+<th>内容</th>
+<th>状态/说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>总布置</td>
+<td>3806、6x4、J6G、4包2串2并、192S2P、618V、648Ah、400kWh</td>
+<td>已获得</td>
+</tr>
+<tr>
+<td>电池包检验报告</td>
+<td>L324D06，96S1P，309.12V，324Ah，100.15488kWh，622±18.6kg</td>
+<td>已获得</td>
+</tr>
+<tr>
+<td>电芯规格书</td>
+<td>324Ah，3.22V，LFP，工作电压/温度/阻抗/电流边界；2.4节含30s脉冲充放电表</td>
+<td>已获得；50%SOC下-10℃ 30s回充-0.30C、放电1.20C</td>
+</tr>
+<tr>
+<td>AD02电芯窗口表</td>
+<td>低温充放电窗口、OCV、T/SOC内阻点</td>
+<td>已获得</td>
+</tr>
+<tr>
+<td>多合一参数</td>
+<td>618V，450-750V，正常运行3.3-4kHz；堵转载频上限1.25kHz；550Arms，峰值约778A；零速可使能</td>
+<td>已获得；脉冲加热频率上限当前按1.25kHz处理，3.3-4kHz保留为正常运行背景</td>
+</tr>
+<tr>
+<td>电机参数</td>
+<td>CAM255PT52，单台Ld约0.26mH，两台电机</td>
+<td>已获得部分核心参数</td>
+</tr>
+<tr>
+<td>待补但非本轮必要</td>
+<td>电机Rs、Ld/Lq饱和曲线、控制器诊断/保护、实际软件模式、实测电机/控制器损耗地图</td>
+<td>后续用于产品级可实施性和效率精细化，不作为当前原理可行性前置条件</td>
+</tr>
+<tr>
+<td>电池外电器损耗经验值</td>
+<td>电机及控制器系统平均效率90%；控制器平均效率96%</td>
+<td>已获得；用于零维模型外部损耗估算，后续建议用电驱/控制器损耗图谱校准</td>
+</tr>
+</tbody></table></section>
+<p class="note">注：本文件中的等效计算用于零维模型初版建模，后续电驱桥/电机及控制器细化参数补齐后可继续修订。30s和60s低温电流窗口应保持分开使用。</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+
+# MATLAB / Simulink generated files
+*.asv
+*.m~
+slprj/
+sccprj/
+*.slxc
+*.mex*
+*.mlappinstall
+*.mlpkginstall
+*.log
+
+# Local cache / scratch outputs
+tmp/
+temp/
+outputs/
+docling_output_light/
+pdf_figure_samples/
+
+# Python / Node caches if helper scripts are added later
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+venv/
+
+# Git should keep deliberate model outputs under project result folders.
+!零维脉冲加热仿真模型-4500-27型整车/05_仿真结果/**

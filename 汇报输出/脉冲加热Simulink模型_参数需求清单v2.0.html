@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>脉冲加热Simulink系统级模型 — 参数需求清单 v2.0</title>
+<style>
+  body { font-family: "微软雅黑", sans-serif; font-size: 10.5pt; line-height: 1.6; color: #333; max-width: 960px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 15pt; color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 8px; }
+  h2 { font-size: 12.5pt; color: #fff; background: #1a3c5e; padding: 5px 12px; margin-top: 28px; }
+  h3 { font-size: 11pt; color: #2c6faa; margin-top: 16px; border-left: 3px solid #2c6faa; padding-left: 8px; }
+  h4 { font-size: 10.5pt; color: #444; margin-top: 12px; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 14px 0; font-size: 9.5pt; }
+  th { background: #2c6faa; color: #fff; padding: 6px 8px; text-align: center; }
+  td { border: 1px solid #ccc; padding: 5px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 8.5pt; color: #fff; }
+  .tag-red { background: #c0392b; }
+  .tag-orange { background: #e67e22; }
+  .tag-green { background: #27ae60; }
+  .tag-blue { background: #2c6faa; }
+  .tag-gray { background: #7f8c8d; }
+  .box-blue { border-left: 4px solid #2c6faa; background: #e8f0fe; padding: 10px 14px; margin: 10px 0; font-size: 10pt; }
+  .box-orange { border-left: 4px solid #e67e22; background: #fef5e7; padding: 10px 14px; margin: 10px 0; font-size: 10pt; }
+  .box-green { border-left: 4px solid #27ae60; background: #d5f5e3; padding: 10px 14px; margin: 10px 0; font-size: 10pt; }
+  .box-red { border-left: 4px solid #c0392b; background: #fde8e8; padding: 10px 14px; margin: 10px 0; font-size: 10pt; }
+  .small { font-size: 9pt; color: #666; }
+  .bold { font-weight: bold; }
+  .red { color: #c0392b; font-weight: bold; }
+  .page-break { page-break-before: always; }
+  .new-badge { background: #e74c3c; color: #fff; font-size: 8pt; padding: 1px 5px; border-radius: 2px; margin-left: 4px; }
+  .upgrade-badge { background: #f39c12; color: #fff; font-size: 8pt; padding: 1px 5px; border-radius: 2px; margin-left: 4px; }
+  pre { background: #f5f5f5; border: 1px solid #ddd; padding: 10px; border-radius: 4px; font-size: 9pt; line-height: 1.5; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>脉冲加热Simulink系统级模型<br>参数需求清单 v2.0</h1>
+<p class="small">编制: 动力总成前瞻部 | 日期: 2026-05-08 | 版本: v2.0（Simulink系统级模型） | 用途: 与电池/电驱/整车供应商技术交流</p>
+
+<div class="box-blue">
+<strong>版本说明：</strong>本清单在v1.0（0D模型参数）基础上，针对Simulink系统级建模需求进行全面升级。<br>
+<strong>主要变化：</strong><br>
+&bull; 电池：从纯电阻R(T) → 2阶RC等效电路（新增R1/C1/R2/C2极化参数、OCV全曲线、熵热系数）<br>
+&bull; 逆变器：从理想开关 → IGBT器件级（新增导通压降、开关损耗、热阻抗）<br>
+&bull; 热模型：从单节点集总 → 多节点热网络（新增电芯内部热阻、模组间热阻）<br>
+&bull; 新增整车/系统级参数（冷却系统、线束阻抗、BMS通信接口）<br><br>
+标记说明：<span class="new-badge">NEW</span> = v2.0新增参数 &nbsp; <span class="upgrade-badge">升级</span> = 相比v1.0精度要求提升
+</div>
+
+<h2>一、电池组参数（向电池供应商获取）</h2>
+
+<h3>1.1 基本规格参数</h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>B01</td><td>单芯额定电压</td><td>V_nom</td><td>3.2 V</td><td>LFP标称电压</td><td><span class="tag tag-green">已知</span></td><td>P1</td><td>—</td></tr>
+<tr><td>B02</td><td>单芯额定容量</td><td>Q_nom</td><td>230 Ah</td><td>额定容量（C/3放电）</td><td><span class="tag tag-green">已知</span></td><td>P1</td><td>—</td></tr>
+<tr><td>B03</td><td>成组方式</td><td>Ns × Np</td><td>180S3P</td><td>串并联数</td><td><span class="tag tag-green">已知</span></td><td>P1</td><td>确认实车配置</td></tr>
+<tr><td>B04</td><td>Pack总质量</td><td>M_pack</td><td>4000 kg</td><td>含箱体、结构件、液冷板</td><td><span class="tag tag-red">必须</span></td><td>P2</td><td>决定热容</td></tr>
+<tr><td>B05</td><td>单芯质量</td><td>m_cell</td><td>—</td><td>裸电芯质量</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>多节点热模型需要</td></tr>
+</table>
+
+<h3>1.2 ECM等效电路参数 <span class="new-badge">NEW</span></h3>
+
+<div class="box-orange">
+<strong>核心升级：</strong>Simulink模型采用2阶RC等效电路（Thevenin ECM），相比0D模型的纯电阻R(T)，新增极化动态响应参数。这些参数决定了电池端电压的瞬态行为和产热精度。
+</div>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>B06</td><td class="bold">欧姆内阻</td><td>R0(T,SOC)</td><td>Arrhenius估算</td><td>HPPC 10s脉冲DCIR<br>温度: -30/-20/-10/0/25°C<br>SOC: 20/30/50/70/90%</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td class="red">最关键参数</td></tr>
+<tr><td>B07</td><td class="bold">电荷转移极化电阻</td><td>R1(T,SOC)</td><td>—</td><td>短时间常数RC环路电阻<br>τ1 = R1·C1 ≈ 1~5 s</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>HPPC或EIS辨识</td></tr>
+<tr><td>B08</td><td class="bold">电荷转移极化电容</td><td>C1(T,SOC)</td><td>—</td><td>短时间常数RC环路电容</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>与R1配对</td></tr>
+<tr><td>B09</td><td class="bold">扩散极化电阻</td><td>R2(T,SOC)</td><td>—</td><td>长时间常数RC环路电阻<br>τ2 = R2·C2 ≈ 30~200 s</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>EIS辨识更准确</td></tr>
+<tr><td>B10</td><td class="bold">扩散极化电容</td><td>C2(T,SOC)</td><td>—</td><td>长时间常数RC环路电容</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>与R2配对</td></tr>
+<tr><td>B11</td><td class="bold">OCV-SOC曲线</td><td>OCV(SOC,T)</td><td>恒定3.2V</td><td>多温度OCV曲线<br>SOC分辨率≤5%<br>温度: -30/-20/-10/0/25°C</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>C/20充放电取平均</td></tr>
+<tr><td>B12</td><td>熵热系数 <span class="new-badge">NEW</span></td><td>dOCV/dT</td><td>—</td><td>开路电压温度系数<br>用于计算可逆熵热</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>不同SOC下的值<br>可由多温度OCV差分获得</td></tr>
+</table>
+
+<h3>1.3 电池安全边界参数</h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>B13</td><td class="bold">低温最大脉冲电流</td><td>I_pulse_max(T)</td><td>—</td><td>各温度下允许的最大充/放电脉冲电流<br>及持续时间限制（如: -20°C, 10s, 1C）</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>安全边界判据</td></tr>
+<tr><td>B14</td><td>析锂电压阈值 <span class="new-badge">NEW</span></td><td>V_li_plating</td><td>—</td><td>低温充电时负极析锂的电压下限<br>或等效电流限制曲线</td><td><span class="tag tag-orange">重要</span></td><td>P3</td><td>控制策略安全约束</td></tr>
+<tr><td>B15</td><td>最大允许温升速率 <span class="new-badge">NEW</span></td><td>dT/dt_max</td><td>—</td><td>电芯允许的最大温升速率<br>（防止内部热应力过大）</td><td><span class="tag tag-orange">重要</span></td><td>P3</td><td>通常 ≤3°C/min</td></tr>
+<tr><td>B16</td><td>温度一致性要求 <span class="new-badge">NEW</span></td><td>ΔT_max</td><td>—</td><td>Pack内电芯间最大允许温差</td><td><span class="tag tag-gray">参考</span></td><td>P4</td><td>通常 ≤5°C</td></tr>
+</table>
+
+<h3>1.4 电池热物性参数 <span class="upgrade-badge">升级</span></h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>B17</td><td>电芯比热容</td><td>Cp_cell</td><td>~1050 J/(kg·K)</td><td>电芯级比热容（非Pack级）</td><td><span class="tag tag-red">必须</span></td><td>P2</td><td>DSC测试或文献</td></tr>
+<tr><td>B18</td><td>电芯内部导热系数 <span class="new-badge">NEW</span></td><td>λ_cell</td><td>—</td><td>面内方向 λ_in 和厚度方向 λ_through<br>（方形电芯各向异性）</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>用于计算R_cc</td></tr>
+<tr><td>B19</td><td>电芯尺寸</td><td>L×W×H</td><td>—</td><td>电芯外形尺寸</td><td><span class="tag tag-red">必须</span></td><td>P2</td><td>计算热阻需要</td></tr>
+<tr><td>B20</td><td>模组结构热阻 <span class="new-badge">NEW</span></td><td>R_cm</td><td>—</td><td>电芯表面→模组外壳等效热阻<br>含导热垫、结构件</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>若无数据可由结构推算</td></tr>
+<tr><td>B21</td><td>Pack壳体散热热阻</td><td>R_amb</td><td>0.015 K/W</td><td>液冷关闭时Pack→环境等效热阻</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>冷浸透后自然冷却曲线反推</td></tr>
+<tr><td>B22</td><td>Pack寄生电阻</td><td>R_parasitic</td><td>~10%·R_pack</td><td>母排+连接件+继电器+熔断器总电阻</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>或提供Pack总内阻</td></tr>
+</table>
+
+<div class="box-red">
+<strong>最关键参数：B06~B11（ECM参数组）</strong><br>
+这6个参数构成电池等效电路模型的完整输入。<strong>最理想的数据来源：</strong><br>
+1. <strong>HPPC测试数据（原始数据）</strong>— 我方可自行辨识R0/R1/C1/R2/C2<br>
+2. <strong>EIS阻抗谱数据</strong>— 更精确的频域辨识<br>
+3. <strong>供应商已辨识的ECM参数表</strong>— 直接使用<br><br>
+三种方式任选其一即可。若仅能提供DCIR（R0），模型可退化为1阶或纯R模型运行，但精度下降。
+</div>
+
+<div class="page-break"></div>
+
+<h2>二、电驱系统参数（向电驱供应商获取）</h2>
+
+<h3>2.1 电机绕组参数</h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>M01</td><td class="bold">d轴电感</td><td>L_d</td><td>1.5 mH (估)</td><td>堵转(ω=0)条件下d轴电感<br>需提供L_d(I_d)曲线（含磁饱和）</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td class="red">核心参数 #1</td></tr>
+<tr><td>M02</td><td>q轴电感</td><td>L_q</td><td>—</td><td>堵转条件下q轴电感</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>IPM电机L_d≠L_q</td></tr>
+<tr><td>M03</td><td class="bold">定子绕组电阻</td><td>R_s</td><td>20 mΩ (估)</td><td>相电阻@25°C<br>含温度系数α_Cu</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>影响效率和电机产热</td></tr>
+<tr><td>M04</td><td>电机极对数</td><td>p</td><td>—</td><td>永磁体极对数</td><td><span class="tag tag-green">已知</span></td><td>P1</td><td>确认即可</td></tr>
+<tr><td>M05</td><td>电机额定/峰值功率</td><td>P_rated/P_peak</td><td>—</td><td>额定功率及对应转速</td><td><span class="tag tag-gray">参考</span></td><td>—</td><td>背景信息</td></tr>
+</table>
+
+<h3>2.2 逆变器/IGBT参数 <span class="new-badge">NEW</span></h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>M06</td><td class="bold">IGBT最大相电流</td><td>I_IGBT_max</td><td>800 A (估)</td><td>峰值电流及持续时间限制<br>（如: 800A/10s, 600A/60s）</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>安全边界</td></tr>
+<tr><td>M07</td><td class="bold">最大开关频率</td><td>f_sw_max</td><td>—</td><td>逆变器支持的最大PWM频率</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>决定脉冲频率范围</td></tr>
+<tr><td>M08</td><td>IGBT导通压降 <span class="new-badge">NEW</span></td><td>V_ce_sat</td><td>—</td><td>饱和导通电压（典型值@额定电流）</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>计算导通损耗</td></tr>
+<tr><td>M09</td><td>二极管正向压降 <span class="new-badge">NEW</span></td><td>V_f</td><td>—</td><td>续流二极管正向导通压降</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>死区期间续流损耗</td></tr>
+<tr><td>M10</td><td>开关损耗能量 <span class="new-badge">NEW</span></td><td>E_on/E_off/E_rr</td><td>—</td><td>开通/关断/反向恢复损耗<br>@额定电压、额定电流条件</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>数据手册可查<br>用于L2精确模型</td></tr>
+<tr><td>M11</td><td>死区时间 <span class="new-badge">NEW</span></td><td>t_dead</td><td>2~4 μs</td><td>上下桥臂互锁死区时间</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>影响电压利用率</td></tr>
+<tr><td>M12</td><td>IGBT热阻抗 <span class="new-badge">NEW</span></td><td>Z_th_jc</td><td>—</td><td>结-壳热阻（稳态）<br>或Foster/Cauer热网络参数</td><td><span class="tag tag-gray">参考</span></td><td>P4</td><td>IGBT热保护建模</td></tr>
+<tr><td>M13</td><td>直流母线电容</td><td>C_bus</td><td>—</td><td>电容值及纹波电流耐受能力</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>高频脉冲对母线冲击</td></tr>
+<tr><td>M14</td><td>母线电压范围</td><td>V_dc_range</td><td>~576 V</td><td>最低/额定/最高母线电压</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td>180S×3.2V=576V</td></tr>
+</table>
+
+<h3>2.3 电机热参数 <span class="new-badge">NEW</span></h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>M15</td><td>绕组热容量</td><td>C_th_winding</td><td>—</td><td>定子绕组等效热容<br>（铜+绝缘+槽楔）</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>评估绕组温升速率</td></tr>
+<tr><td>M16</td><td>绕组→机壳热阻</td><td>R_th_wh</td><td>—</td><td>绕组到电机壳体的等效热阻</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>含槽绝缘+铁芯</td></tr>
+<tr><td>M17</td><td>绕组最高允许温度</td><td>T_winding_max</td><td>180°C (H级)</td><td>绝缘等级对应的最高温度</td><td><span class="tag tag-red">必须</span></td><td>P3</td><td>安全保护阈值</td></tr>
+<tr><td>M18</td><td>电机壳体散热条件</td><td>R_th_ha</td><td>—</td><td>机壳→环境热阻<br>（自然对流 vs 水冷）</td><td><span class="tag tag-gray">参考</span></td><td>P2</td><td>脉冲加热时水泵状态</td></tr>
+</table>
+
+<h3>2.4 控制接口参数 <span class="new-badge">NEW</span></h3>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>M19</td><td class="bold">底层控制开放程度</td><td>—</td><td>—</td><td>能否自定义PWM调制策略？<br>能否直接注入d轴电流指令？</td><td><span class="tag tag-red">必须</span></td><td>P1</td><td class="red">方案可行性前提</td></tr>
+<tr><td>M20</td><td>电流采样频率 <span class="new-badge">NEW</span></td><td>f_sample</td><td>—</td><td>逆变器内部电流传感器采样率</td><td><span class="tag tag-orange">重要</span></td><td>P3</td><td>PID闭环带宽约束</td></tr>
+<tr><td>M21</td><td>通信接口协议 <span class="new-badge">NEW</span></td><td>—</td><td>—</td><td>MCU与VCU之间CAN报文定义<br>（脉冲加热使能/状态/故障码）</td><td><span class="tag tag-orange">重要</span></td><td>P3</td><td>控制策略集成需要</td></tr>
+<tr><td>M22</td><td>电机中性点可引出性</td><td>—</td><td>—</td><td>三相绕组中性点是否可外接</td><td><span class="tag tag-orange">重要</span></td><td>—</td><td>方案B预留</td></tr>
+</table>
+
+<div class="box-red">
+<strong>最关键参数：M01（L_d）+ M19（控制开放性）</strong><br>
+&bull; <strong>L_d</strong> 直接决定脉冲电流幅值和加热功率。务必提供<u>堵转条件下</u>的实测值（非额定工况标称值）。<br>
+&bull; <strong>M19</strong> 是方案一（软件策略）的可行性前提。若逆变器不开放底层PWM控制，则必须转向方案B/C。<br><br>
+<strong>L_d对加热效果的影响（0D模型计算结果）：</strong><br>
+&bull; L_d = 0.5 mH, f=500Hz → 温升速率 ~1.2°C/min ✓<br>
+&bull; L_d = 1.5 mH, f=100Hz → 温升速率 ~0.8°C/min（边界可行）<br>
+&bull; L_d = 3.0 mH → 方案一基本不可行
+</div>
+
+<div class="page-break"></div>
+
+<h2>三、整车/系统级参数（向整车或系统集成方获取）<span class="new-badge">NEW</span></h2>
+
+<table>
+<tr><th style="width:4%;">#</th><th style="width:20%;">参数名称</th><th style="width:8%;">符号</th><th style="width:12%;">当前值</th><th style="width:26%;">需求说明</th><th style="width:8%;">优先级</th><th style="width:8%;">阶段</th><th style="width:14%;">备注</th></tr>
+<tr><td>V01</td><td>高压线束总电阻</td><td>R_harness</td><td>—</td><td>电池→逆变器高压线束电阻<br>（含正负极线束+连接器）</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>影响回路总电阻</td></tr>
+<tr><td>V02</td><td>高压线束电感 <span class="new-badge">NEW</span></td><td>L_harness</td><td>—</td><td>线束寄生电感（通常μH级）</td><td><span class="tag tag-gray">参考</span></td><td>P4</td><td>高频时可能影响波形</td></tr>
+<tr><td>V03</td><td>主继电器接触电阻</td><td>R_relay</td><td>—</td><td>主正/主负继电器闭合电阻</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>含在寄生电阻中</td></tr>
+<tr><td>V04</td><td>熔断器电阻</td><td>R_fuse</td><td>—</td><td>主回路熔断器直流电阻</td><td><span class="tag tag-orange">重要</span></td><td>P1</td><td>含在寄生电阻中</td></tr>
+<tr><td>V05</td><td>冷却系统状态</td><td>—</td><td>关闭</td><td>脉冲加热时冷却泵/风扇是否运行<br>若运行：冷却液流量、入口温度</td><td><span class="tag tag-orange">重要</span></td><td>P2</td><td>影响热模型边界条件</td></tr>
+<tr><td>V06</td><td>整车低温冷浸条件</td><td>T_soak</td><td>-20°C</td><td>目标验证的极端低温工况<br>（-30/-25/-20/-10°C）</td><td><span class="tag tag-green">已知</span></td><td>P1</td><td>仿真边界条件</td></tr>
+<tr><td>V07</td><td>加热目标温度</td><td>T_target</td><td>0°C</td><td>脉冲加热终止温度</td><td><span class="tag tag-green">已知</span></td><td>P3</td><td>控制策略输入</td></tr>
+<tr><td>V08</td><td>加热时间约束</td><td>t_max</td><td>30 min</td><td>用户可接受的最大加热等待时间</td><td><span class="tag tag-green">已知</span></td><td>P3</td><td>→ 要求温升≥1°C/min</td></tr>
+<tr><td>V09</td><td>SOC消耗预算</td><td>ΔSOC_max</td><td>≤5%</td><td>加热过程允许消耗的最大SOC</td><td><span class="tag tag-green">已知</span></td><td>P3</td><td>控制策略约束</td></tr>
+<tr><td>V10</td><td>VCU-BMS-MCU通信矩阵 <span class="new-badge">NEW</span></td><td>—</td><td>—</td><td>脉冲加热相关CAN信号定义<br>（使能、状态反馈、故障码）</td><td><span class="tag tag-orange">重要</span></td><td>P3</td><td>控制策略集成</td></tr>
+</table>
+
+<div class="box-blue">
+<strong>说明：</strong>整车级参数中V01~V04可合并为"Pack外部寄生电阻"一个值提供。V05~V09为系统设计约束，多数已在项目定义中明确。V10在Phase 3控制策略开发时需要。
+</div>
+
+<h2>四、参数优先级与开发阶段映射</h2>
+
+<div class="box-green">
+<strong>分阶段获取策略：</strong>不需要一次性获取所有参数。按Simulink模型开发Phase逐步索取，降低供应商沟通压力。
+</div>
+
+<table>
+<tr><th>开发阶段</th><th>时间</th><th>必需参数</th><th>可用替代方案</th></tr>
+<tr><td class="bold">Phase 1<br>电气回路</td><td>第1~3周</td><td>B06(R0), B11(OCV), B07-B08(R1C1)<br>M01(L_d), M03(R_s), M06(I_max)<br>M07(f_sw_max), M14(V_dc), M19(开放性)</td><td>R1C1可暂用文献值<br>L_d无替代，必须实测</td></tr>
+<tr><td class="bold">Phase 2<br>电-热耦合</td><td>第4~6周</td><td>B04(M_pack), B05(m_cell), B17(Cp)<br>B18(λ_cell), B19(尺寸)<br>M15(C_th_winding), M16(R_th_wh)</td><td>热参数可用文献典型值启动<br>后续用实测数据修正</td></tr>
+<tr><td class="bold">Phase 3<br>控制策略</td><td>第7~10周</td><td>B13(I_pulse_max), B14(析锂阈值)<br>M17(T_winding_max), M20(f_sample)<br>M21(CAN协议), V10(通信矩阵)</td><td>安全阈值可先用保守估计<br>通信协议需供应商配合</td></tr>
+<tr><td class="bold">Phase 4<br>系统集成</td><td>第11~13周</td><td>全部参数验证<br>M10(开关损耗), M12(IGBT热阻)<br>V01-V04(线束/继电器电阻)</td><td>—</td></tr>
+</table>
+
+<!-- PLACEHOLDER_SECTION_E -->
+
+<div class="page-break"></div>
+
+<h2>五、推荐数据格式</h2>
+
+<h3>5.1 电池ECM参数（推荐格式）</h3>
+
+<h4>方式一：提供HPPC原始测试数据（最优）</h4>
+<table>
+<tr><th colspan="6">HPPC测试条件：10s充电脉冲 + 40s静置 + 10s放电脉冲，各SOC点静置≥1h</th></tr>
+<tr><th>温度(°C)</th><th>SOC(%)</th><th>R0_chg (mΩ)</th><th>R0_dchg (mΩ)</th><th>时间序列数据</th><th>备注</th></tr>
+<tr><td>-30</td><td>20/30/50/70/90</td><td>___</td><td>___</td><td>提供V(t), I(t)原始数据</td><td rowspan="5">原始数据可由我方<br>自行辨识R1C1/R2C2</td></tr>
+<tr><td>-20</td><td>20/30/50/70/90</td><td>___</td><td>___</td><td>同上</td></tr>
+<tr><td>-10</td><td>20/30/50/70/90</td><td>___</td><td>___</td><td>同上</td></tr>
+<tr><td>0</td><td>20/30/50/70/90</td><td>___</td><td>___</td><td>同上</td></tr>
+<tr><td>25</td><td>20/30/50/70/90</td><td>___</td><td>___</td><td>同上</td></tr>
+</table>
+<p class="small">数据格式：Excel或CSV，含时间戳(s)、电压(V)、电流(A)、温度(°C)列</p>
+
+<h4>方式二：提供已辨识ECM参数表</h4>
+<table>
+<tr><th>温度(°C)</th><th>SOC(%)</th><th>R0 (mΩ)</th><th>R1 (mΩ)</th><th>C1 (F)</th><th>R2 (mΩ)</th><th>C2 (F)</th></tr>
+<tr><td>-30</td><td>50</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>-20</td><td>50</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>-10</td><td>50</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>0</td><td>50</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>25</td><td>50</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+</table>
+<p class="small">注：以上仅示例SOC=50%，完整数据需覆盖SOC=20/30/50/70/90%各点</p>
+
+<h3>5.2 OCV-SOC曲线（推荐格式）</h3>
+<table>
+<tr><th>SOC(%)</th><th>OCV@-30°C (V)</th><th>OCV@-20°C (V)</th><th>OCV@-10°C (V)</th><th>OCV@0°C (V)</th><th>OCV@25°C (V)</th></tr>
+<tr><td>0</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>5</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>10</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>...</td><td colspan="5">每5% SOC一个数据点，共21行</td></tr>
+<tr><td>95</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+<tr><td>100</td><td>___</td><td>___</td><td>___</td><td>___</td><td>___</td></tr>
+</table>
+<p class="small">测试方法：C/20恒流充放电取平均值，SOC步进≤5%</p>
+
+<h3>5.3 电机电感数据（推荐格式）<span class="upgrade-badge">升级</span></h3>
+<table>
+<tr><th>I_d (A)</th><th>L_d (mH)</th><th>L_q (mH)</th><th>测试条件</th></tr>
+<tr><td>0 (空载)</td><td>___</td><td>___</td><td rowspan="7">堵转, ω=0<br>温度: 25°C<br><br>若有温度依赖数据<br>请额外提供-20°C<br>和80°C工况</td></tr>
+<tr><td>50</td><td>___</td><td>___</td></tr>
+<tr><td>100</td><td>___</td><td>___</td></tr>
+<tr><td>200</td><td>___</td><td>___</td></tr>
+<tr><td>300</td><td>___</td><td>___</td></tr>
+<tr><td>400</td><td>___</td><td>___</td></tr>
+<tr><td>600</td><td>___</td><td>___</td></tr>
+</table>
+<p class="small">注：IPM电机电感随电流变化（磁饱和效应），请提供多点数据。脉冲加热工作电流范围约100~500A。</p>
+
+<h3>5.4 IGBT开关损耗数据（推荐格式）<span class="new-badge">NEW</span></h3>
+<table>
+<tr><th>参数</th><th>测试条件</th><th>数值</th><th>单位</th></tr>
+<tr><td>V_ce_sat</td><td>I_c = 额定电流, T_j = 25°C</td><td>___</td><td>V</td></tr>
+<tr><td>V_ce_sat</td><td>I_c = 额定电流, T_j = 150°C</td><td>___</td><td>V</td></tr>
+<tr><td>V_f (二极管)</td><td>I_f = 额定电流, T_j = 25°C</td><td>___</td><td>V</td></tr>
+<tr><td>E_on</td><td>V_cc = 额定电压, I_c = 额定电流</td><td>___</td><td>mJ</td></tr>
+<tr><td>E_off</td><td>V_cc = 额定电压, I_c = 额定电流</td><td>___</td><td>mJ</td></tr>
+<tr><td>E_rr</td><td>V_cc = 额定电压, I_f = 额定电流</td><td>___</td><td>mJ</td></tr>
+</table>
+<p class="small">注：以上数据通常可从IGBT模块数据手册直接获取。若供应商可提供IGBT型号即可，我方自行查阅。</p>
+
+<h2>六、参数汇总统计</h2>
+
+<table>
+<tr><th>来源</th><th>参数总数</th><th><span class="tag tag-red">必须</span></th><th><span class="tag tag-orange">重要</span></th><th><span class="tag tag-gray">参考/已知</span></th><th>v2.0新增</th></tr>
+<tr><td>电池供应商</td><td>22项</td><td>9</td><td>10</td><td>3</td><td>10项</td></tr>
+<tr><td>电驱供应商</td><td>22项</td><td>6</td><td>12</td><td>4</td><td>14项</td></tr>
+<tr><td>整车/系统</td><td>10项</td><td>0</td><td>6</td><td>4</td><td>10项（全新）</td></tr>
+<tr><td class="bold">合计</td><td class="bold">54项</td><td class="bold red">15</td><td class="bold">28</td><td class="bold">11</td><td class="bold">34项</td></tr>
+</table>
+
+<div class="box-green">
+<strong>行动建议：</strong><br>
+1. <strong>立即发起（Phase 1启动前）：</strong>向电池供应商索取HPPC原始数据或ECM参数表；向电驱供应商确认L_d实测值和底层控制开放性<br>
+2. <strong>Phase 1期间补充：</strong>IGBT型号（查数据手册获取M08~M12）；OCV曲线；母线电容参数<br>
+3. <strong>Phase 2启动前：</strong>电芯热物性参数；电机热参数<br>
+4. <strong>Phase 3启动前：</strong>安全边界参数；CAN通信协议<br><br>
+<strong>最小启动集（仅需5项即可启动Phase 1）：</strong><br>
+① R0(T) 或 HPPC数据 &nbsp; ② L_d &nbsp; ③ R_s &nbsp; ④ I_IGBT_max &nbsp; ⑤ 底层控制开放性确认
+</div>
+
+</body>
+</html>
