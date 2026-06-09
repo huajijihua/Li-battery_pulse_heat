@@ -24,6 +24,7 @@ function p = build_4500_27_pulse_heating_params()
     p.Cth_branch_J_per_K = p.branch_mass_kg * p.Cp_battery_J_per_kgK;
     p.branch_area_m2 = 8.0;
     p.h_conv_W_per_m2K = 5.0;
+    p.h_conv_scan_W_per_m2K = [0 2 5 10 20];
     p.enable_heat_loss = true;
     p.thermal_boundary = 'convection';
     p.R_th_branch_K_per_W = 1 / (p.h_conv_W_per_m2K * p.branch_area_m2);
@@ -47,8 +48,10 @@ function p = build_4500_27_pulse_heating_params()
         2.36 2.32 2.23 2.09; ...
         0.33 0.33 0.31 0.29];
     p.R_branch_192S1P_table_ohm = R_cell_1s_mOhm * 1e-3 * p.N_series;
+    p.R_heat_factor_default = 1.00;
+    p.R_heat_factor_scan = [0.30 0.50 0.70 1.00];
     p.R_branch_source = ['附件1 1s BOL放电DCR, 电芯mOhm换算为252S1P支路; ', ...
-        '未获得高频AC阻抗/HPPC温度-SOC全表'];
+        '未获得高频AC阻抗/HPPC温度-SOC全表; R_heat_factor用于高频阻抗敏感性'];
 
     % Motor / inverter constraints from 电驱桥参数, 多合一参数, 附件2.
     p.motor_count = 2;
@@ -60,6 +63,8 @@ function p = build_4500_27_pulse_heating_params()
     p.I_motor_peak_limit_A = sqrt(2) * p.I_motor_rms_limit_A;
     p.I_motor_rms_continuous_A = 320;
     p.I_motor_rms_short_A = 550;
+    p.I_motor_rms_limit_default_A = 550;
+    p.I_motor_rms_limit_scan_A = [320 450 550];
     p.motor_current_limit_note_cn = ['550Arms来自60s/30s等级约束, ', ...
         '320Arms为>=30min持续电流; 当前图表显示电气能力, 长时热耐久需单独验证'];
 

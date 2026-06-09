@@ -8,18 +8,26 @@ function result = solve_pulse_heating_case(p, study, topology)
         c = topology.cases(i_case);
         for i_mis = 1:numel(study.branch_mismatch_labels)
             mismatch = get_case_mismatch(study, i_mis, c.branch_count);
-            for T_C = study.temperature_list_C
-                for f_Hz = study.frequency_scan_Hz
-                    for duty = study.duty_scan
-                        for amplitude_scale = study.current_amplitude_scale_scan
-                            op = eval_circuit_operating_point(p, c, T_C, ...
-                                study.SOC, f_Hz, duty, mismatch, amplitude_scale);
-                            row_idx = row_idx + 1;
-                            row = make_result_row(p, c, study, i_mis, T_C, f_Hz, duty, op);
-                            if row_idx == 1
-                                result_rows = row;
-                            else
-                                result_rows(row_idx) = row;
+            for i_R = 1:numel(study.R_heat_factor_scan)
+                for i_lim = 1:numel(study.motor_rms_limit_scan_A)
+                    p_case = apply_sensitivity_params(p, ...
+                        study.R_heat_factor_scan(i_R), ...
+                        study.motor_rms_limit_scan_A(i_lim));
+                    for T_C = study.temperature_list_C
+                        for f_Hz = study.frequency_scan_Hz
+                            for duty = study.duty_scan
+                                for amplitude_scale = study.current_amplitude_scale_scan
+                                    op = eval_circuit_operating_point(p_case, c, T_C, ...
+                                        study.SOC, f_Hz, duty, mismatch, amplitude_scale);
+                                    row_idx = row_idx + 1;
+                                    row = make_result_row(p_case, c, study, i_mis, ...
+                                        T_C, f_Hz, duty, op);
+                                    if row_idx == 1
+                                        result_rows = row;
+                                    else
+                                        result_rows(row_idx) = row;
+                                    end
+                                end
                             end
                         end
                     end
@@ -31,6 +39,7 @@ function result = solve_pulse_heating_case(p, study, topology)
     result = struct();
     result.results = struct2table(result_rows);
     [result.summary, result.sims] = build_default_summary(p, study, topology);
+    result.sensitivity = build_sensitivity_summary(p, study, topology);
     result.topology = topology;
 end
 
@@ -45,6 +54,8 @@ function row = make_result_row(p, c, study, i_mis, T_C, f_Hz, duty, op)
     row.frequency_Hz = f_Hz;
     row.duty = duty;
     row.current_amplitude_scale = op.current_amplitude_scale;
+    row.R_heat_factor = op.R_heat_factor;
+    row.motor_rms_limit_A = op.motor_rms_limit_A;
     row.effective_current_scale = op.effective_current_scale;
     row.dTdt_C_per_min = op.dTdt_C_per_min;
     row.time_to_0C_min = op.time_to_target_min;
@@ -143,6 +154,8 @@ function row = make_summary_row(p, c, sim, op)
     row.branch_heat_spread_pct = op.branch_heat_spread_pct;
     row.current_scale = op.current_scale;
     row.current_amplitude_scale = op.current_amplitude_scale;
+    row.R_heat_factor = op.R_heat_factor;
+    row.motor_rms_limit_A = op.motor_rms_limit_A;
     row.effective_current_scale = op.effective_current_scale;
     row.limiting_factor = op.limiting_factor;
     row.safety_status = op.safety.status;
@@ -165,7 +178,13 @@ function row = make_summary_row(p, c, sim, op)
     row.note = op.note;
 end
 
-function sim = simulate_pulse_heating_case(p, study, c, mismatch)
+function sim = simulate_pulse_heating_case(p, study, c, mismatch, sim_cfg)
+    if nargin < 5
+        sim_cfg = struct('frequency_Hz', study.default_frequency_Hz, ...
+            'duty', study.default_duty, ...
+            'current_amplitude_scale', study.default_current_amplitude_scale, ...
+            'SOC', study.SOC, 'T_init_C', p.T_init_C);
+    end
     n_steps = floor(study.t_end_min * 60 / study.dt_s) + 1;
     t_s = (0:n_steps-1)' * study.dt_s;
     T_branch = zeros(n_steps, c.branch_count);
@@ -189,13 +208,13 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch)
     I_branch_peak_max = zeros(n_steps, 1);
     I_bus_rms = zeros(n_steps, 1);
 
-    T_branch(1, :) = p.T_init_C;
-    SOC(1) = study.SOC;
+    T_branch(1, :) = sim_cfg.T_init_C;
+    SOC(1) = sim_cfg.SOC;
 
     for k = 1:n_steps
         op = eval_circuit_operating_point(p, c, mean(T_branch(k, :)), SOC(k), ...
-            study.default_frequency_Hz, study.default_duty, mismatch, ...
-            study.default_current_amplitude_scale);
+            sim_cfg.frequency_Hz, sim_cfg.duty, mismatch, ...
+            sim_cfg.current_amplitude_scale);
         heat = eval_heat_balance(p, op.P_branch_W, T_branch(k, :), c.branch_count);
 
         P_branch(k, :) = op.P_branch_W;
@@ -226,7 +245,7 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch)
                 p.ocv_soc_bp, p.ocv_cell_V, SOC(k), 'linear', 'extrap') * ...
                 p.C_branch_Ah / 1000;
             SOC(k+1) = max(0, SOC(k) - ...
-                op.P_total_electric_W * study.dt_s / 3.6e6 / max(E_total_kWh, eps));
+        op.P_total_electric_W * study.dt_s / 3.6e6 / max(E_total_kWh, eps));
         end
     end
 
@@ -253,6 +272,179 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch)
     sim.I_branch_rms_max_A = I_branch_rms_max;
     sim.I_branch_peak_max_A = I_branch_peak_max;
     sim.I_bus_rms_A = I_bus_rms;
+end
+
+function table_out = build_sensitivity_summary(p, study, topology)
+    rows = struct([]);
+    row_idx = 0;
+    t_eval_min = [10 20 30];
+
+    for i_case = 1:numel(topology.cases)
+        c = topology.cases(i_case);
+        for i_mis = 1:numel(study.branch_mismatch_labels)
+            mismatch = get_case_mismatch(study, i_mis, c.branch_count);
+            for i_R = 1:numel(study.R_heat_factor_scan)
+                for i_lim = 1:numel(study.motor_rms_limit_scan_A)
+                    p_case = apply_sensitivity_params(p, ...
+                        study.R_heat_factor_scan(i_R), ...
+                        study.motor_rms_limit_scan_A(i_lim));
+                    sim = simulate_pulse_heating_case(p_case, study, c, mismatch);
+                    op = eval_circuit_operating_point(p_case, c, ...
+                        study.default_temperature_C, study.SOC, ...
+                        study.default_frequency_Hz, study.default_duty, ...
+                        mismatch, study.default_current_amplitude_scale);
+
+                    row_idx = row_idx + 1;
+                    row = make_sensitivity_row(p_case, c, study, i_mis, ...
+                        sim, op, t_eval_min, 'R_heat_limit_matrix');
+                    if row_idx == 1
+                        rows = row;
+                    else
+                        rows(row_idx) = row;
+                    end
+                end
+            end
+        end
+    end
+
+    rows = append_report_sensitivity_rows(rows, row_idx, ...
+        p, study, topology, t_eval_min);
+    table_out = struct2table(rows);
+end
+
+function rows = append_report_sensitivity_rows(rows, row_idx, ...
+        p, study, topology, t_eval_min)
+    c = get_topology_case(topology, '三包并联双电机');
+    mismatch = ones(1, c.branch_count);
+    i_mis = 1;
+
+    for amp_scale = p.current_amplitude_scale_scan
+        [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
+            c, mismatch, i_mis, t_eval_min, 'current_amplitude', ...
+            study.default_frequency_Hz, study.default_duty, amp_scale, ...
+            study.SOC, p.R_heat_factor_default, ...
+            p.I_motor_rms_limit_default_A, p.h_conv_W_per_m2K);
+    end
+
+    for f_Hz = p.frequency_scan_Hz
+        [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
+            c, mismatch, i_mis, t_eval_min, 'frequency', ...
+            f_Hz, study.default_duty, study.default_current_amplitude_scale, ...
+            study.SOC, p.R_heat_factor_default, ...
+            p.I_motor_rms_limit_default_A, p.h_conv_W_per_m2K);
+    end
+
+    for h_conv = p.h_conv_scan_W_per_m2K
+        [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
+            c, mismatch, i_mis, t_eval_min, 'h_conv_boundary', ...
+            study.default_frequency_Hz, study.default_duty, ...
+            study.default_current_amplitude_scale, study.SOC, ...
+            p.R_heat_factor_default, p.I_motor_rms_limit_default_A, h_conv);
+    end
+
+    for R_heat_factor = p.R_heat_factor_scan
+        [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
+            c, mismatch, i_mis, t_eval_min, 'R_heat_factor', ...
+            study.default_frequency_Hz, study.default_duty, ...
+            study.default_current_amplitude_scale, study.SOC, ...
+            R_heat_factor, p.I_motor_rms_limit_default_A, ...
+            p.h_conv_W_per_m2K);
+    end
+end
+
+function [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
+        c, mismatch, i_mis, t_eval_min, sensitivity_axis, f_Hz, duty, ...
+        amp_scale, SOC0, R_heat_factor, motor_limit_A, h_conv)
+    p_case = apply_sensitivity_params(p, R_heat_factor, motor_limit_A, h_conv);
+    sim_cfg = struct('frequency_Hz', f_Hz, 'duty', duty, ...
+        'current_amplitude_scale', amp_scale, 'SOC', SOC0, ...
+        'T_init_C', study.default_temperature_C);
+    sim = simulate_pulse_heating_case(p_case, study, c, mismatch, sim_cfg);
+    op = eval_circuit_operating_point(p_case, c, ...
+        study.default_temperature_C, SOC0, f_Hz, duty, mismatch, amp_scale);
+    row_idx = row_idx + 1;
+    rows(row_idx) = make_sensitivity_row(p_case, c, study, i_mis, sim, ...
+        op, t_eval_min, sensitivity_axis, sim_cfg);
+end
+
+function c = get_topology_case(topology, case_id)
+    idx = find(strcmp({topology.cases.id}, case_id), 1, 'first');
+    if isempty(idx)
+        error('PulseHeating:MissingTopologyCase', ...
+            'Cannot find topology case "%s".', case_id);
+    end
+    c = topology.cases(idx);
+end
+
+function row = make_sensitivity_row(p, c, study, i_mis, sim, op, t_eval_min, ...
+        sensitivity_axis, sim_cfg)
+    if nargin < 9
+        sim_cfg = struct('frequency_Hz', study.default_frequency_Hz, ...
+            'duty', study.default_duty, ...
+            'current_amplitude_scale', study.default_current_amplitude_scale, ...
+            'SOC', study.SOC, 'T_init_C', study.default_temperature_C);
+    end
+    row = struct();
+    row.case_id = c.id;
+    row.case_name = c.name;
+    row.mismatch_label = study.branch_mismatch_labels{i_mis};
+    row.sensitivity_axis = sensitivity_axis;
+    row.R_heat_factor = op.R_heat_factor;
+    row.motor_rms_limit_A = op.motor_rms_limit_A;
+    row.h_conv_W_per_m2K = p.h_conv_W_per_m2K;
+    row.frequency_Hz = sim_cfg.frequency_Hz;
+    row.duty = sim_cfg.duty;
+    row.current_amplitude_scale = sim_cfg.current_amplitude_scale;
+    row.SOC_init_pct = sim_cfg.SOC * 100;
+    row.T_10min_C = interp1(sim.t_min, sim.T_mean_C, t_eval_min(1), 'linear', 'extrap');
+    row.T_20min_C = interp1(sim.t_min, sim.T_mean_C, t_eval_min(2), 'linear', 'extrap');
+    row.T_30min_C = interp1(sim.t_min, sim.T_mean_C, t_eval_min(3), 'linear', 'extrap');
+    row.time_to_0C_min = estimate_target_time(sim.t_min, sim.T_mean_C, p.T_target_C);
+    row.E_total_to_0C_kWh = interpolate_metric_at_target(sim.t_min, ...
+        sim.T_mean_C, sim.E_total_electric_kWh, p.T_target_C);
+    row.SOC_delta_to_0C_pct = (sim.SOC(1) - interpolate_metric_at_target( ...
+        sim.t_min, sim.T_mean_C, sim.SOC, p.T_target_C)) * 100;
+    row.E_total_30min_kWh = sim.E_total_electric_kWh(end);
+    row.SOC_delta_30min_pct = (sim.SOC(1) - sim.SOC(end)) * 100;
+    row.SOC_delta_per_C_pct = row.SOC_delta_30min_pct / ...
+        max(row.T_30min_C - sim_cfg.T_init_C, eps);
+    row.P_battery_initial_kW = op.P_battery_W / 1000;
+    row.I_motor_rms_A = op.I_motor_rms_A;
+    row.I_motor_peak_A = op.I_motor_peak_A;
+    row.I_branch_rms_max_A = op.I_branch_rms_max_A;
+    row.I_branch_peak_max_A = op.I_branch_peak_max_A;
+    row.I_bus_rms_A = op.I_bus_rms_A;
+    row.limiting_factor = op.limiting_factor;
+    row.safety_status = op.safety.status;
+    row.recommendation_level = make_recommendation_level(op, row.time_to_0C_min, ...
+        row.SOC_delta_to_0C_pct);
+    row.note = op.note;
+end
+
+function level = make_recommendation_level(op, time_to_0C_min, soc_to_0C_pct)
+    if isfinite(time_to_0C_min) && time_to_0C_min <= 20 && ...
+            (isnan(soc_to_0C_pct) || soc_to_0C_pct <= 5) && ...
+            op.current_limits.motor_rms_margin >= 1.0
+        level = 'A_建议进入L1验证';
+    elseif isfinite(time_to_0C_min) && time_to_0C_min <= 30 && ...
+            op.current_limits.motor_rms_margin >= 1.0
+        level = 'B_备选或降额讨论';
+    elseif op.dTdt_C_per_min >= 0.5
+        level = 'C_有温升但约束偏弱';
+    else
+        level = 'D_不建议主攻';
+    end
+end
+
+function p_case = apply_sensitivity_params(p, R_heat_factor, motor_rms_limit_A, h_conv)
+    p_case = p;
+    p_case.R_heat_factor_current = R_heat_factor;
+    p_case.I_motor_rms_limit_A = motor_rms_limit_A;
+    p_case.I_motor_peak_limit_A = sqrt(2) * motor_rms_limit_A;
+    if nargin >= 4
+        p_case.h_conv_W_per_m2K = h_conv;
+        p_case.R_th_branch_K_per_W = 1 / max(h_conv * p_case.branch_area_m2, eps);
+    end
 end
 
 function mismatch = get_case_mismatch(study, idx, branch_count)

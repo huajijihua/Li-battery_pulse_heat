@@ -28,9 +28,11 @@ output_dir = fullfile(project_dir, '05_仿真结果', '4500_27_screening');
 if ~exist(output_dir, 'dir')
     mkdir(output_dir);
 end
+delete(fullfile(output_dir, '4500_27_fig*.png'));
 
 writetable(result.summary, fullfile(output_dir, '4500_27_summary.csv'));
 writetable(result.results, fullfile(output_dir, '4500_27_scan_results.csv'));
+writetable(result.sensitivity, fullfile(output_dir, '4500_27_sensitivity_summary.csv'));
 
 figs = findall(0, 'Type', 'figure');
 figs = flipud(figs);

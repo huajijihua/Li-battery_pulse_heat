@@ -86,6 +86,8 @@ function op = eval_circuit_operating_point(p, c, T_C, SOC, f_Hz, duty, mismatch,
     op.I_bus_rms_A = I_bus_rms_A;
     op.I_switch_rms_A = sqrt(I_switch_rms_sq);
     op.current_amplitude_scale = current_amplitude_scale;
+    op.R_heat_factor = get_R_heat_factor(p);
+    op.motor_rms_limit_A = p.I_motor_rms_limit_A;
     op.current_scale = current_scale;
     op.effective_current_scale = effective_current_scale;
     op.limiting_factor = char(limiting_factor);
@@ -109,6 +111,17 @@ function R_branch = interp_branch_resistance(p, T_C, SOC)
     SOC_q = min(max(SOC, min(p.R_data_SOC)), max(p.R_data_SOC));
     R_branch = interp2(p.R_data_SOC, p.R_data_T_C, ...
         p.R_branch_192S1P_table_ohm, SOC_q, T_q, 'linear');
+    R_branch = R_branch * get_R_heat_factor(p);
+end
+
+function factor = get_R_heat_factor(p)
+    if isfield(p, 'R_heat_factor_current')
+        factor = p.R_heat_factor_current;
+    elseif isfield(p, 'R_heat_factor_default')
+        factor = p.R_heat_factor_default;
+    else
+        factor = 1.0;
+    end
 end
 
 function ref = get_branch_current_window_ref(p, T_C)
