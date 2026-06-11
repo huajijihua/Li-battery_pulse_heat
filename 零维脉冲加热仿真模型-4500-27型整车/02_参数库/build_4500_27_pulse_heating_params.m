@@ -127,6 +127,11 @@ function p = build_4500_27_pulse_heating_params()
         1.00 1.00 1.00; ...
         0.90 1.00 1.10];
     p.branch_mismatch_labels = {'nominal', 'R_90_100_110'};
+    p.dual_motor_sync_correlation_default = 1.00;
+    p.dual_motor_sync_correlation_scan = [1.00 0.75 0.50 0.00 -0.50];
+    p.dual_motor_sync_note_cn = ['双电机同步相关系数rho仅用于L0.5控制风险边界: ', ...
+        'rho=1表示电池侧电流理想同相合成, rho=0表示不同频/不锁相长期平均近似, ', ...
+        'rho<0表示反相趋势风险; 该口径不替代真实PWM/dq控制仿真'];
     p.T_amb_C = -20;
     p.T_init_C = -20;
     p.T_target_C = 0;

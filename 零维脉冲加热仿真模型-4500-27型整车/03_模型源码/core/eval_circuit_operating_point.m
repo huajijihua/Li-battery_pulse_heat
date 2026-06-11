@@ -1,8 +1,11 @@
-function op = eval_circuit_operating_point(p, c, T_C, SOC, f_Hz, duty, mismatch, current_amplitude_scale)
+function op = eval_circuit_operating_point(p, c, T_C, SOC, f_Hz, duty, mismatch, current_amplitude_scale, motor_sync_correlation)
 %EVAL_CIRCUIT_OPERATING_POINT Electrical, loss, thermal, and limit snapshot.
 
     if nargin < 8 || isempty(current_amplitude_scale)
         current_amplitude_scale = 1.0;
+    end
+    if nargin < 9 || isempty(motor_sync_correlation)
+        motor_sync_correlation = 1.0;
     end
 
     R_branch = interp_branch_resistance(p, T_C, SOC) .* mismatch(:)';
@@ -23,16 +26,22 @@ function op = eval_circuit_operating_point(p, c, T_C, SOC, f_Hz, duty, mismatch,
             raw.i_min = raw.i_min * current_amplitude_scale;
             raw.i_pp = raw.i_pp * current_amplitude_scale;
             raw.i_peak = raw.i_peak * current_amplitude_scale;
+            motor_sync_correlation = clamp_motor_sync_correlation( ...
+                motor_sync_correlation, motor_count);
 
             conductance_share = (1 ./ R_branch) ./ sum(1 ./ R_branch);
-            raw_branch_rms = motor_count * raw.i_rms .* conductance_share;
-            raw_branch_peak = motor_count * raw.i_peak .* conductance_share;
+            raw_pack_rms = calc_pack_rms_from_motor_rms(raw.i_rms, ...
+                motor_count, motor_sync_correlation);
+            raw_pack_peak = motor_count * raw.i_peak;
+            raw_branch_rms = raw_pack_rms .* conductance_share;
+            raw_branch_peak = raw_pack_peak .* conductance_share;
             limits_raw = eval_current_limits(p, raw.i_rms, raw.i_peak, ...
                 max(raw_branch_rms), max(raw_branch_peak));
 
             i_motor_rms = raw.i_rms * limits_raw.current_scale;
             i_motor_peak = raw.i_peak * limits_raw.current_scale;
-            i_pack_rms = motor_count * i_motor_rms;
+            i_pack_rms = calc_pack_rms_from_motor_rms(i_motor_rms, ...
+                motor_count, motor_sync_correlation);
             i_pack_peak = motor_count * i_motor_peak;
             branch_rms = i_pack_rms .* conductance_share;
             branch_pk = i_pack_peak .* conductance_share;
@@ -50,6 +59,9 @@ function op = eval_circuit_operating_point(p, c, T_C, SOC, f_Hz, duty, mismatch,
             limiting_factor = limits_raw.limiting_factor;
             branch_rms_sq = branch_rms.^2;
             branch_peak = branch_pk;
+            battery_current_sync_factor = calc_sync_current_factor( ...
+                motor_count, motor_sync_correlation);
+            battery_heating_sync_factor = battery_current_sync_factor^2;
 
         otherwise
             error('未知架构类型: %s', c.type);
@@ -86,6 +98,9 @@ function op = eval_circuit_operating_point(p, c, T_C, SOC, f_Hz, duty, mismatch,
     op.I_bus_rms_A = I_bus_rms_A;
     op.I_switch_rms_A = sqrt(I_switch_rms_sq);
     op.current_amplitude_scale = current_amplitude_scale;
+    op.motor_sync_correlation = motor_sync_correlation;
+    op.battery_current_sync_factor = battery_current_sync_factor;
+    op.battery_heating_sync_factor = battery_heating_sync_factor;
     op.R_heat_factor = get_R_heat_factor(p);
     op.motor_rms_limit_A = p.I_motor_rms_limit_A;
     op.current_scale = current_scale;
@@ -190,6 +205,35 @@ function motor_count = get_case_motor_count(c, p)
     end
 end
 
+function rho = clamp_motor_sync_correlation(rho, motor_count)
+    if motor_count <= 1
+        rho = 1.0;
+        return;
+    end
+    rho_min = -1 / (motor_count - 1);
+    rho = min(max(rho, rho_min), 1.0);
+end
+
+function i_pack_rms = calc_pack_rms_from_motor_rms(i_motor_rms, motor_count, rho)
+    if motor_count <= 1
+        i_pack_rms = i_motor_rms;
+        return;
+    end
+    rms_sq_factor = motor_count + motor_count * (motor_count - 1) * rho;
+    i_pack_rms = i_motor_rms * sqrt(max(rms_sq_factor, 0));
+end
+
+function factor = calc_sync_current_factor(motor_count, rho)
+    if motor_count <= 1
+        factor = 1.0;
+        return;
+    end
+    ideal_sync_factor = motor_count;
+    actual_factor = sqrt(max(motor_count + motor_count * ...
+        (motor_count - 1) * rho, 0));
+    factor = actual_factor / ideal_sync_factor;
+end
+
 function pct = spread_pct(x)
     if isempty(x) || mean(abs(x)) <= eps
         pct = 0;
@@ -226,6 +270,9 @@ function note = build_note(p, c, op, spec_ref)
         pieces(end+1) = "双电机集中单支路, 需核对支路过流和高压盒路径";
     elseif c.branch_count >= 3
         pieces(end+1) = "三支路同步分流, 需核对支路均衡和母线压力";
+    end
+    if get_case_motor_count(c, p) >= 2 && op.motor_sync_correlation < 0.999
+        pieces(end+1) = "双电机电池侧同步相关性低于理想同步, 用于控制风险边界";
     end
     if isfield(p, 'branch_hf_peak_limit_A') && isfinite(p.branch_hf_peak_limit_A)
         pieces(end+1) = "已启用电池高频峰值硬限制";

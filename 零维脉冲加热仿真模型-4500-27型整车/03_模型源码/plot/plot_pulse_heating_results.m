@@ -212,12 +212,17 @@ function plot_energy_pie(summary)
     row = summary(strcmp(summary.case_id, '三包并联双电机'), :);
     energy = [row.E_battery_heat_30min_kWh, row.E_motor_loss_30min_kWh, ...
         row.E_inverter_loss_30min_kWh];
+    total_electric = row.E_total_loss_equiv_30min_kWh;
+    battery_heat_efficiency_pct = row.E_battery_heat_30min_kWh / ...
+        max(total_electric, eps) * 100;
     labels = {sprintf('电池自身发热 %.1fkWh', energy(1)), ...
         sprintf('电机铜耗 %.1fkWh', energy(2)), ...
         sprintf('控制器损耗 %.1fkWh', energy(3))};
     pie(energy, labels);
-    title(sprintf('默认双电机方案能量分布: 电池加热效率 %.1f%%', ...
-        row.heating_efficiency_pct));
+    title({'默认双电机方案能量分布', ...
+        sprintf('电池加热效率 %.1f%% = %.1f/%.1f kWh', ...
+        battery_heat_efficiency_pct, row.E_battery_heat_30min_kWh, ...
+        total_electric)});
 end
 
 function plot_dual_motor_sensitivity(~, ~, p, study, topology)
@@ -249,7 +254,7 @@ function plot_current_sensitivity(p, study)
             p.R_heat_factor_default, p.I_motor_rms_limit_default_A, ...
             p.h_conv_W_per_m2K);
         T20(k) = m.T20_C;
-        SOC_per_C(k) = m.SOC_delta_per_C_pct;
+        SOC_per_C(k) = m.energy_equiv_SOC_delta_per_C_pct;
         I_motor(k) = m.I_motor_rms_A;
     end
     plot(I_motor, T20, '-o', 'LineWidth', 2.0, ...
@@ -261,7 +266,7 @@ function plot_current_sensitivity(p, study)
     xlabel('实际单电机RMS电流 (Arms)');
     ylabel('20min终温 (C)');
     title('电流大小影响');
-    subtitle('标注为单位温升SOC消耗: %SOC/C');
+    subtitle('标注为单位温升等效SOC消耗: %SOC/C');
     grid on;
 end
 
@@ -275,7 +280,7 @@ function plot_frequency_sensitivity(p, study)
             p.R_heat_factor_default, p.I_motor_rms_limit_default_A, ...
             p.h_conv_W_per_m2K);
         T20(k) = m.T20_C;
-        SOC_per_C(k) = m.SOC_delta_per_C_pct;
+        SOC_per_C(k) = m.energy_equiv_SOC_delta_per_C_pct;
     end
     plot(f_list, T20, '-o', 'LineWidth', 2.0, ...
         'Color', [0.47 0.67 0.19]);
@@ -300,7 +305,7 @@ function plot_heat_boundary_sensitivity(p, study)
             study.SOC, p.R_heat_factor_default, ...
             p.I_motor_rms_limit_default_A, h_list(k));
         T20(k) = m.T20_C;
-        SOC_per_C(k) = m.SOC_delta_per_C_pct;
+        SOC_per_C(k) = m.energy_equiv_SOC_delta_per_C_pct;
     end
     plot(h_list, T20, '-o', 'LineWidth', 2.0, ...
         'Color', [0.18 0.42 0.70]);
@@ -326,7 +331,7 @@ function plot_resistance_sensitivity(p, study)
             study.SOC, R_list(k), p.I_motor_rms_limit_default_A, ...
             p.h_conv_W_per_m2K);
         T20(k) = m.T20_C;
-        SOC_per_C(k) = m.SOC_delta_per_C_pct;
+        SOC_per_C(k) = m.energy_equiv_SOC_delta_per_C_pct;
     end
     plot(R_list, T20, '-o', 'LineWidth', 2.0, ...
         'Color', [0.49 0.18 0.56]);
@@ -461,10 +466,11 @@ function m = simulate_report_case(p, study, f_Hz, duty, amp_scale, SOC0, ...
     m = struct();
     m.T20_C = interp1(t_s / 60, T_mean, 20, 'linear', 'extrap');
     m.T30_C = T_mean(end);
-    m.SOC_delta_30min_pct = (SOC(1) - SOC(end)) * 100;
+    m.energy_equiv_SOC_delta_30min_pct = (SOC(1) - SOC(end)) * 100;
     m.delta_T_30min_C = m.T30_C - study.default_temperature_C;
-    m.SOC_delta_per_C_pct = m.SOC_delta_30min_pct / ...
+    m.energy_equiv_SOC_delta_per_C_pct = m.energy_equiv_SOC_delta_30min_pct / ...
         max(m.delta_T_30min_C, eps);
-    m.E_total_30min_kWh = E_total_kWh(end);
+    m.E_total_loss_equiv_30min_kWh = E_total_kWh(end);
+    m.coulombic_SOC_delta_30min_pct = nan;
     m.I_motor_rms_A = I_motor(1);
 end

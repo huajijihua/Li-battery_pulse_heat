@@ -17,6 +17,8 @@ function study = build_4500_27_study_cases(p)
     study.default_motor_rms_limit_A = p.I_motor_rms_limit_default_A;
     study.branch_mismatch_sets = p.branch_mismatch_sets;
     study.branch_mismatch_labels = p.branch_mismatch_labels;
+    study.default_motor_sync_correlation = p.dual_motor_sync_correlation_default;
+    study.motor_sync_correlation_scan = p.dual_motor_sync_correlation_scan;
     study.t_end_min = p.t_end_min;
     study.dt_s = p.dt_s;
 end
