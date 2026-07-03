@@ -114,3 +114,4 @@ OpenCode 推进过程中，遇到以下节点建议请求 Codex 审核：
 4. 对 `.docx`、`.xlsx`、`.pptx`、`.pdf`、`.slx`、`.mph`、`.ame` 等结构化文件，使用官方 API、专用工具或受控脚本处理，不按纯文本硬改。
 5. Windows 中文路径操作优先使用 `-LiteralPath`、`Join-Path`、`Resolve-Path -LiteralPath`；写入中文内容后必须 read-back verification。
 6. 对关键模型、参数表和报告做副本或另存版本前，应说明目的；未经明确授权不自动保存 `.slx`、`.mph`、`.ame` 正式文件。
+7. `建模依据资料/`、参数来源清单、专利和论文属于建模依据链，清理工作区时默认保留；优先清理可再生成仿真结果、临时输出、工具缓存、历史汇报和过期归档。
