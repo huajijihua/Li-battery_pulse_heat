@@ -35,3 +35,7 @@ venv/
 
 # Git should keep deliberate model outputs under project result folders.
 !零维脉冲加热仿真模型-4500-27型整车/05_仿真结果/**
+
+# Heavy generated screening artifacts; regenerate locally when needed.
+零维脉冲加热仿真模型-4500-27型整车/05_仿真结果/4500_27_screening/4500_27_scan_results.csv
+零维脉冲加热仿真模型-4500-27型整车/05_仿真结果/4500_27_screening/*.png

@@ -33,8 +33,11 @@ run_4500_27_pulse_heating_screening
 包括：
 
 - `4500_27_summary.csv`
-- `4500_27_scan_results.csv`
 - `4500_27_sensitivity_summary.csv`
+
+全量扫描 CSV 和报告图会在本地生成，但默认不再放入 Git：
+
+- `4500_27_scan_results.csv`
 - `4500_27_fig01.png`
 - `4500_27_fig02.png`
 - `4500_27_fig03.png`
