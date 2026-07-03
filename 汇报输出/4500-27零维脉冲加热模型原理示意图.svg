@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .title { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 42px; font-weight: 700; fill: #172033; }
+      .subtitle { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 24px; fill: #4b5565; }
+      .box-title { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 27px; font-weight: 700; fill: #172033; }
+      .box-text { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 20px; fill: #4b5565; }
+      .small { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; font-size: 18px; fill: #5c6678; }
+      .formula { font-family: "Cambria Math", "Times New Roman", serif; font-size: 24px; fill: #172033; }
+      .box { stroke-width: 2.5; rx: 16; ry: 16; }
+      .input { fill: #eef5ff; stroke: #3778c2; }
+      .elec { fill: #f1fbf7; stroke: #24926e; }
+      .sync { fill: #fff6e9; stroke: #d88a1d; }
+      .heat { fill: #fff1f0; stroke: #d24a3f; }
+      .out { fill: #f6f2ff; stroke: #7755cc; }
+      .arrow { stroke: #6b7280; stroke-width: 3.2; fill: none; marker-end: url(#arrowHead); }
+      .thin { stroke: #a3adba; stroke-width: 2; fill: none; marker-end: url(#arrowHeadSmall); }
+      .tag { fill: #172033; opacity: 0.08; }
+    </style>
+    <marker id="arrowHead" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowHeadSmall" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#a3adba"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="900"/>
+
+  <text class="title" x="80" y="82">4500-27 零维车载脉冲加热模型原理</text>
+  <text class="subtitle" x="80" y="122">L0.5 等效电路-电热粗筛模型：用于判断电流量级、产热能力和温升趋势</text>
+
+  <rect class="box input" x="85" y="215" width="250" height="150"/>
+  <text class="box-title" x="125" y="265">整车配置</text>
+  <text class="box-text" x="125" y="305">3包并联输出</text>
+  <text class="box-text" x="125" y="338">双电机/双MCU</text>
+
+  <rect class="box elec" x="430" y="205" width="285" height="170"/>
+  <text class="box-title" x="470" y="255">等效 R-L 回路</text>
+  <text class="box-text" x="470" y="297">Vdc 正负脉冲</text>
+  <text class="box-text" x="470" y="330">Ld / Rs / Rbat</text>
+
+  <rect class="box sync" x="810" y="205" width="285" height="170"/>
+  <text class="box-title" x="850" y="255">双电机同步</text>
+  <text class="box-text" x="850" y="297">ρ 表示相关性</text>
+  <text class="box-text" x="850" y="330">合成母线RMS</text>
+
+  <rect class="box heat" x="1190" y="205" width="285" height="170"/>
+  <text class="box-title" x="1230" y="255">电池产热</text>
+  <text class="box-text" x="1230" y="297">三包按电导分流</text>
+  <text class="box-text" x="1230" y="330">支路 I²R 发热</text>
+
+  <path class="arrow" d="M 335 290 L 420 290"/>
+  <path class="arrow" d="M 715 290 L 800 290"/>
+  <path class="arrow" d="M 1095 290 L 1180 290"/>
+
+  <rect class="box out" x="430" y="535" width="285" height="155"/>
+  <text class="box-title" x="470" y="585">等效散热</text>
+  <text class="box-text" x="470" y="627">h_eq A ΔT</text>
+  <text class="box-text" x="470" y="660">驻车低散热边界</text>
+
+  <rect class="box out" x="810" y="535" width="285" height="155"/>
+  <text class="box-title" x="850" y="585">零维热平衡</text>
+  <text class="box-text" x="850" y="627">产热 - 散热</text>
+  <text class="box-text" x="850" y="660">得到平均温升</text>
+
+  <rect class="box out" x="1190" y="535" width="285" height="155"/>
+  <text class="box-title" x="1230" y="585">输出结果</text>
+  <text class="box-text" x="1230" y="627">温升 / 能耗</text>
+  <text class="box-text" x="1230" y="660">参数敏感性</text>
+
+  <path class="thin" d="M 1332 375 C 1332 455 585 455 585 525"/>
+  <path class="arrow" d="M 715 612 L 800 612"/>
+  <path class="arrow" d="M 1095 612 L 1180 612"/>
+
+  <rect x="95" y="520" width="265" height="170" rx="16" ry="16" fill="#f8fafc" stroke="#c7d0db" stroke-width="2"/>
+  <text class="box-title" x="125" y="570">核心方程</text>
+  <text class="formula" x="125" y="612">I<tspan baseline-shift="sub" font-size="16">bus,rms</tspan> = f(ρ)</text>
+  <text class="formula" x="125" y="650">P<tspan baseline-shift="sub" font-size="16">bat</tspan> = I²R</text>
+  <text class="formula" x="125" y="688">C<tspan baseline-shift="sub" font-size="16">th</tspan>dT/dt = P<tspan baseline-shift="sub" font-size="16">bat</tspan>-P<tspan baseline-shift="sub" font-size="16">loss</tspan></text>
+
+  <path class="tag" d="M 90 780 H1510 V820 H90 Z"/>
+  <text class="small" x="115" y="807">边界说明：本模型不包含真实MCU电流环、三相PWM、BMS保护策略和三维热场，仅用于方案初筛。</text>
+</svg>

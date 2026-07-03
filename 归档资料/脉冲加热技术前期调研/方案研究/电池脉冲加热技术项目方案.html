@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>整车低温场景节能——电池脉冲加热技术 项目仿真与实验协同推进方案</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: "微软雅黑", SimSun, sans-serif; font-size: 12pt; line-height: 1.8; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; }
+  h1 { text-align: center; font-size: 18pt; font-weight: bold; border-bottom: 3px solid #1a5276; padding-bottom: 12px; margin-top: 10px; color: #1a5276; }
+  h2 { font-size: 14pt; font-weight: bold; border-bottom: 2px solid #2980b9; padding-bottom: 6px; margin-top: 30px; color: #1a5276; }
+  h3 { font-size: 12pt; font-weight: bold; margin-top: 20px; color: #2c3e50; }
+  h4 { font-size: 11pt; font-weight: bold; color: #2c3e50; }
+  p { text-indent: 2em; margin: 8px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #555; padding: 6px 8px; text-align: left; }
+  th { background-color: #1a5276; color: white; font-weight: bold; }
+  tr:nth-child(even) { background-color: #eaf2f8; }
+  ul, ol { margin: 6px 0 6px 2em; }
+  li { margin: 4px 0; }
+  .cover-info { text-align: center; margin: 30px 0; }
+  .cover-info p { text-indent: 0; margin: 6px 0; }
+  .highlight { background-color: #fef9e7; border-left: 4px solid #f1c40f; padding: 10px 14px; margin: 12px 0; }
+  .box { background-color: #eaf2f8; border: 1px solid #2980b9; border-radius: 4px; padding: 12px 16px; margin: 12px 0; }
+  .code-block { background-color: #f5f5f5; border: 1px solid #ddd; padding: 10px 14px; font-family: Consolas, monospace; font-size: 9pt; white-space: pre-wrap; margin: 10px 0; }
+  .flow-box { background: #f0f4f8; border: 2px solid #2980b9; border-radius: 8px; padding: 14px; margin: 14px 0; text-align: center; font-family: Consolas, monospace; font-size: 9pt; line-height: 1.5; white-space: pre; }
+  .toc { margin: 20px 0; }
+  .toc a { color: #2980b9; text-decoration: none; }
+  .toc ul { list-style: none; }
+  .toc li { margin: 4px 0; }
+  .footer { text-align: center; font-size: 9pt; color: #888; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px; }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ===== 封面 ===== -->
+<div style="text-align:center; margin-top:80px;">
+  <h1 style="font-size:22pt; border:none; color:#1a3c5e;">整车低温场景节能<br>——电池脉冲加热技术</h1>
+  <h2 style="font-size:16pt; border:none; color:#2c3e50; margin-top:30px;">项目仿真与实验协同推进方案</h2>
+  <div class="cover-info" style="margin-top:80px;">
+    <p><strong>编制部门：</strong>前瞻技术研究部 新能源小组</p>
+    <p><strong>编制人：</strong>[姓名]</p>
+    <p><strong>日期：</strong>2025年 X 月</p>
+    <p><strong>密级：</strong>内部</p>
+    <p><strong>版本：</strong>V1.0</p>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ===== 目录 ===== -->
+<h2>目录</h2>
+<div class="toc">
+<ol>
+  <li><strong>项目背景与技术原理</strong>
+    <ul>
+      <li>1.1 立项背景</li>
+      <li>1.2 脉冲电流加热技术原理</li>
+      <li>1.3 参考技术指标（基于东风论文实测数据）</li>
+    </ul>
+  </li>
+  <li><strong>项目总体目标与阶段规划</strong>
+    <ul>
+      <li>2.1 总体目标</li>
+      <li>2.2 三阶段规划</li>
+      <li>2.3 涉及部门与分工</li>
+    </ul>
+  </li>
+  <li><strong>仿真详细方案（COMSOL + MATLAB/Simulink）</strong>
+    <ul>
+      <li>3.1 仿真软件与工具链</li>
+      <li>3.2 仿真任务一：电芯电化学-热耦合建模（COMSOL）——核心任务</li>
+      <li>3.3 仿真任务二：模组/电池包集总参数建模（MATLAB/Simulink）</li>
+      <li>3.4 仿真任务三：整车系统级联合仿真</li>
+    </ul>
+  </li>
+  <li><strong>实验需求方案</strong>
+    <ul>
+      <li>4.1 所需样品清单</li>
+      <li>4.2 所需设备清单</li>
+      <li>4.3 实验矩阵详细设计</li>
+    </ul>
+  </li>
+  <li><strong>电芯厂家咨询问题清单</strong></li>
+  <li><strong>仿真阶段交付物与预期结论</strong></li>
+  <li><strong>项目风险与难点分析</strong></li>
+  <li><strong>时间线与资源需求</strong></li>
+  <li><strong>工作流全景图</strong></li>
+</ol>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ===== 第一章 ===== -->
+<h2>一、项目背景与技术原理</h2>
+
+<h3>1.1 立项背景</h3>
+
+<p>新能源商用车在低温环境下动力电池性能严重受限，导致用户抱怨集中：低温充电慢/充不进电、输出功率受限车辆动力不足、续航里程大幅缩水。传统PTC加热速率低（-10°C下仅约0.65°C/min，-20°C下约0.78°C/min），能量效率仅35%~40%，且热量从外部传递至电芯内部路径长、热损失大。</p>
+
+<p>脉冲电流加热技术利用电池低温下自身内阻变大的特性，通过控制电机开关管的导通方式，使电机与电池之间产生高频充放电，实现从电芯内部快速均匀自加热，是一种新型高效的动力电池加热方式。该技术较传统PTC加热在温升速率（1.3~1.5倍提升）和能量效率（63%以上）方面均有显著优势。</p>
+
+<h3>1.2 脉冲电流加热技术原理</h3>
+
+<p><strong>核心物理机制：</strong></p>
+<p>低温环境下，电池内阻急剧增大。在交流激励下，锂离子只在电极材料颗粒局部做短程振荡迁移，不深度嵌入负极晶格，因此不易发生析锂。此时可以利用远大于常规充电倍率的电流（如3C~8C），通过以下三种产热机制实现快速加热：</p>
+
+<ol>
+  <li><strong>欧姆热：</strong>电流流过电池欧姆内阻（集流体、电极、电解液）产生的焦耳热</li>
+  <li><strong>极化热：</strong>电化学反应过电位产生的热</li>
+  <li><strong>可逆熵热：</strong>锂离子嵌入/脱出过程中的熵变热</li>
+</ol>
+
+<p><strong>整车实现方式：</strong></p>
+<p>利用电机控制器IGBT开关管有序通断，以电机绕组电感作为储能元件，在电池与电机之间产生高频脉冲充放电。车辆挂P档使电机处于"堵转"状态（无转矩输出），通过调节开关管占空比控制脉冲电流有效值。</p>
+
+<p><strong>简化工作原理：</strong></p>
+<div class="box">
+  <p style="text-indent:0;"><strong>状态1（电池放电）：</strong>Q1和Q4闭合，Q2和Q3断开 → 电流从电池正极经电机绕组流向负极，电池放电</p>
+  <p style="text-indent:0;"><strong>状态2（电池充电）：</strong>Q2和Q3闭合，Q1和Q4断开 → 电感中储存的能量回馈至电池，电池充电</p>
+  <p style="text-indent:0;">通过高频交替切换上述两种状态，实现电池的高频充放电脉冲加热。</p>
+</div>
+
+<h3>1.3 参考技术指标（基于东风汽车论文实测数据）</h3>
+
+<table>
+<tr><th>指标项</th><th>PT C加热（基准）</th><th>脉冲电流加热</th><th>提升幅度</th></tr>
+<tr><td>电池规格</td><td colspan="2">51kWh LFP，电压平台~371V，1/3C容量~137Ah</td><td>—</td></tr>
+<tr><td>脉冲频率</td><td>—</td><td>~555.8 Hz</td><td>—</td></tr>
+<tr><td>脉冲有效电流</td><td>—</td><td>~170 A（峰值550A经占空比调节）</td><td>—</td></tr>
+<tr><td>-10°C温升速率</td><td>0.65 °C/min</td><td>1.36 °C/min</td><td>↑ 109%</td></tr>
+<tr><td>-20°C温升速率</td><td>0.78 °C/min</td><td>~1.5 °C/min</td><td>↑ 92%</td></tr>
+<tr><td>能量效率</td><td>~35-40%</td><td>≥63%</td><td>↑ 58-80%</td></tr>
+<tr><td>加热后内阻变化</td><td>—</td><td>79.9mΩ → 77.2mΩ（无显著变化）</td><td>无劣化</td></tr>
+<tr><td>加热后容量变化</td><td>—</td><td>138.44Ah → 138.97Ah（无衰减）</td><td>无劣化</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 第二章 ===== -->
+<h2>二、项目总体目标与阶段规划</h2>
+
+<h3>2.1 总体目标</h3>
+<p>将电池脉冲加热技术作为先进技术方案，应用于新能源商用示范车上，实现低温环境下电池快速预热，提升整车低温使用性能和用户体验。</p>
+
+<h3>2.2 三阶段规划</h3>
+
+<table>
+<tr><th>阶段</th><th>时间参考</th><th>核心任务</th><th>仿真侧工作</th><th>实验侧工作</th></tr>
+<tr>
+  <td><strong>阶段1</strong><br>策略与算法开发</td>
+  <td>M1-M6</td>
+  <td>完成从电芯到电池包的理论建模，设计高效脉冲加热方案，开发自适应脉冲加热算法</td>
+  <td>①电芯电化学-热耦合建模（COMSOL）<br>②模组/包集总参数建模（MATLAB/Simulink）<br>③脉冲参数敏感性分析</td>
+  <td>电芯基础特性表征（EIS、容量、熵变测量）<br>单电芯脉冲参数扫描实验</td>
+</tr>
+<tr>
+  <td><strong>阶段2</strong><br>拓扑设计与策略实现</td>
+  <td>M7-M12</td>
+  <td>设计加热拓扑结构，建立脉冲加热系统模型，输出可集成的加热控制程序</td>
+  <td>④整车系统级电-热联合仿真（Simulink）<br>⑤加热拓扑电路仿真验证<br>⑥自适应控制策略开发</td>
+  <td>模组级脉冲加热验证<br>台架系统集成测试（电机+电池包）</td>
+</tr>
+<tr>
+  <td><strong>阶段3</strong><br>集成与测试验证</td>
+  <td>M13-M18</td>
+  <td>系统台架实验完成性能和耐久性考核；实车集成、冬季标定和项目验收</td>
+  <td>⑦仿真-实验对标与模型修正<br>⑧耐久性虚拟评估</td>
+  <td>耐久性循环测试<br>实车冬季标定</td>
+</tr>
+</table>
+
+<h3>2.3 涉及部门与分工</h3>
+
+<table>
+<tr><th>部门</th><th>角色与职责</th></tr>
+<tr><td><strong>前瞻技术研究部 新能源小组</strong>（本人所在）</td><td>总体方案策划；电池脉冲加热建模仿真；脉冲加热策略设计；仿真-实验对标</td></tr>
+<tr><td><strong>新能源开发部 电池小组</strong></td><td>电池样品/模组/包提供；电池基础性能测试；耐久性实验执行</td></tr>
+<tr><td><strong>新能源开发部 电控小组</strong></td><td>逆变器/IGBT控制实现；加热拓扑硬件设计；台架集成测试</td></tr>
+<tr><td><strong>中重型车开发部</strong></td><td>整车集成；热管理架构改造（电机余热回收回路）；实车冬季标定</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 第三章 ===== -->
+<h2>三、仿真详细方案（COMSOL + MATLAB/Simulink）</h2>
+
+<h3>3.1 仿真软件与工具链</h3>
+
+<table>
+<tr><th>层级</th><th>软件平台</th><th>核心模块/工具箱</th><th>用途</th></tr>
+<tr>
+  <td><strong>电芯级多物理场</strong></td>
+  <td>COMSOL Multiphysics (v6.0+)</td>
+  <td>Battery & Fuel Cells Module<br>Heat Transfer Module<br>AC/DC Module<br>LiveLink for MATLAB</td>
+  <td>P2D电化学模型 + 3D热模型耦合<br>脉冲电流激励下电芯电-热行为预测<br>析锂风险定量评估</td>
+</tr>
+<tr>
+  <td><strong>系统级</strong></td>
+  <td>MATLAB/Simulink</td>
+  <td>Simscape Electrical<br>Simscape Battery<br>Stateflow<br>System Identification Toolbox</td>
+  <td>逆变器+IGBT电路建模<br>电池包集总参数模型<br>加热控制策略状态机<br>ECM参数辨识</td>
+</tr>
+</table>
+
+<h3>3.2 仿真任务一：电芯电化学-热耦合建模（COMSOL）——核心任务</h3>
+
+<h4>3.2.1 模型架构</h4>
+<p>采用<strong>伪二维（P2D）电化学模型 + 三维热模型耦合</strong>方案：</p>
+
+<div class="box">
+  <p style="text-indent:0;"><strong>P2D电化学模型（1D+1D）：</strong></p>
+  <ul>
+    <li>x方向：负极集流体(Cu) → 负极多孔电极 → 隔膜 → 正极多孔电极 → 正极集流体(Al)</li>
+    <li>r方向（粒子径向）：活性材料颗粒内锂离子扩散（Fick定律）</li>
+    <li>电解液：浓溶液理论，锂离子迁移与扩散</li>
+    <li>电极动力学：Butler-Volmer方程描述反应速率</li>
+    <li><strong>输出：</strong>局部电流密度、电势分布、锂浓度分布 → 产热分布 q(x,t)</li>
+  </ul>
+  <p style="text-indent:0; margin-top:10px;"><strong>3D热模型：</strong></p>
+  <ul>
+    <li>几何：实际电芯尺寸（方形/软包/圆柱）</li>
+    <li>输入：P2D模型计算的产热分布 q(x,t) 映射至3D几何</li>
+    <li><strong>输出：</strong>温度场 T(x,y,z,t)、最大温差 ΔT_max、温升速率</li>
+  </ul>
+</div>
+
+<h4>3.2.2 关键产热方程</h4>
+
+<div class="box">
+  <p style="text-indent:0;"><strong>总产热：</strong> q_total = q_ohm + q_pol + q_rev</p>
+  <p style="text-indent:0;"><strong>欧姆热：</strong> q_ohm = σ_eff·|∇φ_s|² + κ_eff·|∇φ_e|²（固相+液相欧姆损耗）</p>
+  <p style="text-indent:0;"><strong>极化热：</strong> q_pol = a_s · i_loc · η（Butler-Volmer过电位产热）</p>
+  <p style="text-indent:0;"><strong>可逆熵热：</strong> q_rev = a_s · i_loc · T · (∂U/∂T)（熵变产热/吸热）</p>
+</div>
+
+<h4>3.2.3 析锂判据（安全边界核心）</h4>
+
+<div class="highlight">
+  <p style="text-indent:0;"><strong>判据：</strong>负极固相电势 φ_s_neg &lt; 0 V（vs Li/Li⁺）→ 有析锂风险</p>
+  <p style="text-indent:0;"><strong>高频脉冲下析锂抑制机制：</strong></p>
+  <ol>
+    <li>脉冲周期远小于锂离子扩散时间常数 τ_diff = L²/D_s</li>
+    <li>负半周期（充电方向回馈）使锂离子脱出，避免表面浓度累积</li>
+    <li>频率越高，锂浓度振荡幅度越小，析锂风险越低</li>
+  </ol>
+</div>
+
+<h4>3.2.4 脉冲电流边界条件</h4>
+
+<table>
+<tr><th>参数</th><th>扫描范围</th><th>步长</th><th>说明</th></tr>
+<tr><td>频率 f</td><td>100 Hz ~ 2000 Hz</td><td>100 Hz</td><td>涵盖已有文献555 Hz最优值附近</td></tr>
+<tr><td>电流幅值 I_amp</td><td>1C ~ 8C</td><td>1C</td><td>远大于常规充电倍率</td></tr>
+<tr><td>环境温度 T_amb</td><td>-30°C, -20°C, -10°C, 0°C</td><td>—</td><td>覆盖典型低温场景</td></tr>
+<tr><td>波形</td><td>方波（占空比30%~70%）、正弦波</td><td>—</td><td>方波产热速率更高</td></tr>
+<tr><td>SOC</td><td>30%, 50%, 70%, 90%</td><td>—</td><td>评估SOC对加热性能影响</td></tr>
+</table>
+
+<h4>3.2.5 网格划分与求解器设置</h4>
+
+<table>
+<tr><th>项目</th><th>设置</th></tr>
+<tr><td>电化学模型网格</td><td>负极≥20单元，隔膜≥10单元，正极≥20单元，粒子径向≥15单元</td></tr>
+<tr><td>热模型网格</td><td>自由四面体，最大单元尺寸=电芯特征长度/20</td></tr>
+<tr><td>时间步长</td><td>Δt ≤ 1/(20·f_max)，确保捕捉脉冲特征</td></tr>
+<tr><td>求解器类型</td><td>PARDISO（直接）或GMRES（迭代），相对容差1e-4</td></tr>
+<tr><td>参数化扫描</td><td>Parametric Sweep组合 f × I_amp × T_amb，集群并行</td></tr>
+</table>
+
+<h4>3.2.6 COMSOL仿真输出结果清单</h4>
+
+<table>
+<tr><th>输出类型</th><th>具体结果</th><th>分析目的</th></tr>
+<tr><td>温度场</td><td>T(x,y,z,t) 3D分布</td><td>评估加热均匀性、最大温差</td></tr>
+<tr><td>温升曲线</td><td>T_avg(t), T_max(t), T_min(t)</td><td>计算温升速率 dT/dt</td></tr>
+<tr><td>产热分布</td><td>q_ohm(t), q_pol(t), q_rev(t) 占比</td><td>理解产热机制，优化脉冲参数</td></tr>
+<tr><td>负极电位</td><td>φ_s(t) @负极/隔膜界面</td><td><strong>析锂判据</strong>：φ_s &lt; 0V则有析锂风险</td></tr>
+<tr><td>锂浓度分布</td><td>c_s(r,t) 粒子径向浓度</td><td>评估锂离子扩散是否跟上脉冲</td></tr>
+<tr><td>电压响应</td><td>V_cell(t)</td><td>与实验对比验证模型精度</td></tr>
+<tr><td>阻抗演变</td><td>R_ohm, R_pol vs t</td><td>跟踪加热过程中内阻变化</td></tr>
+<tr><td>能量效率</td><td>η = Q_heat / E_input</td><td>综合性能评价</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h3>3.3 仿真任务二：模组/电池包集总参数建模（MATLAB/Simulink）</h3>
+
+<h4>3.3.1 基于COMSOL结果的等效电路模型（ECM）建立</h4>
+
+<p>从COMSOL高保真模型降阶至可用于系统控制的等效电路模型：</p>
+
+<div class="box">
+  <p style="text-indent:0;"><strong>2阶RC等效电路结构：</strong></p>
+  <p style="text-indent:0;">V_cell = V_oc(SOC,T) - I·R_ohm - V₁ - V₂</p>
+  <p style="text-indent:0;">dVᵢ/dt = -Vᵢ/(Rᵢ·Cᵢ) + I/Cᵢ  &nbsp; (i = 1, 2)</p>
+  <p style="text-indent:0;">mC_p·dT/dt = I²R_ohm + Σ(Vᵢ²/Rᵢ) - hA(T - T_amb)</p>
+  <p style="text-indent:0; margin-top:8px;"><strong>参数识别流程：</strong></p>
+  <ol>
+    <li>从COMSOL仿真得到不同温度/频率/电流下的电压响应</li>
+    <li>使用System Identification Toolbox拟合ECM参数</li>
+    <li>建立参数查找表：R_ohm(T,SOC), R₁(T,SOC,I,f), C₁(T,SOC,I,f)…</li>
+  </ol>
+</div>
+
+<h4>3.3.2 Simulink系统模型架构</h4>
+
+<p>整车脉冲加热系统Simulink模型包含以下核心模块：</p>
+
+<ol>
+  <li><strong>电池包模型：</strong>ECM × N_cells + 热网络（Simscape Battery或自定义）</li>
+  <li><strong>电机堵转模型：</strong>PMSM在ω=0时的R-L等效（L_d, L_q, R_s）</li>
+  <li><strong>逆变器+IGBT模型：</strong>三相桥式电路（Simscape Electrical）</li>
+  <li><strong>SVPWM/SPWM调制器：</strong>产生IGBT门极驱动信号</li>
+  <li><strong>加热控制策略（Stateflow）：</strong>
+    <ul>
+      <li>State 1：初始化检测 → 判断T_batt &lt; T_threshold</li>
+      <li>State 2：参数选择 → 查表确定最优 f, I_amp, D</li>
+      <li>State 3：脉冲加热执行 → PID闭环调节占空比维持目标电流</li>
+      <li>State 4：终止判断 → T_batt ≥ T_target 或异常保护触发</li>
+    </ul>
+  </li>
+  <li><strong>热管理回路模型：</strong>冷却液/余热回收回路（电机冷却液与电池液冷回路串联）</li>
+</ol>
+
+<h4>3.3.3 Simulink参数扫描脚本示例</h4>
+
+<div class="code-block">% 参数扫描脚本
+f_range = [100 200 500 800 1000 1500 2000]; % Hz
+I_amp_range = [1 2 3 4 5 6 7 8];          % C-rate
+T_init_range = [-30 -20 -10 0];           % °C
+
+results = struct();
+for f = f_range
+    for I_amp = I_amp_range
+        for T_init = T_init_range
+            simOut = sim('PulseHeating_System', ...
+                'StopTime', '600');
+            % 记录温升速率、能量效率、析锂风险等
+        end
+    end
+end
+% 生成最优参数MAP → (f, I_amp) → 温升速率等高线图</div>
+
+<h3>3.4 仿真任务三：整车系统级联合仿真</h3>
+
+<p><strong>方案A（推荐—模型降阶）：</strong></p>
+<ol>
+  <li>COMSOL中运行参数化扫描，生成数据集</li>
+  <li>在MATLAB中训练降阶模型（ROM）：使用DMD（动态模态分解）或神经网络</li>
+  <li>建立从 (I, f, T_init, SOC) → (T(t), φ_s_min) 的映射</li>
+  <li>将ROM嵌入Simulink作为S-Function或MATLAB Function模块</li>
+</ol>
+
+<p><strong>方案B（高精度但慢）：</strong></p>
+<p>使用COMSOL LiveLink for MATLAB直接联合仿真，在Simulink每个时间步调用COMSOL求解器。</p>
+
+<div class="page-break"></div>
+
+<!-- ===== 第四章 ===== -->
+<h2>四、实验需求方案</h2>
+
+<h3>4.1 所需样品清单</h3>
+
+<table>
+<tr><th>样品</th><th>规格要求</th><th>数量</th><th>用途</th><th>优先级</th></tr>
+<tr>
+  <td><strong>参比电极电芯</strong></td>
+  <td>与示范车同款电化学体系（NCM或LFP），带Li金属第三参比电极，容量≥5Ah</td>
+  <td>≥6颗</td>
+  <td><strong>负极电位直接测量</strong>——验证析锂判据的唯一直接手段</td>
+  <td>★★★★★<br>关键缺失</td>
+</tr>
+<tr>
+  <td><strong>常规电芯</strong></td>
+  <td>与示范车同款，不带参比电极</td>
+  <td>≥20颗</td>
+  <td>脉冲加热循环测试；容量/内阻基准标定；耐久性实验</td>
+  <td>★★★★★</td>
+</tr>
+<tr>
+  <td><strong>模组样品</strong></td>
+  <td>串联≥4S，每个电芯至少1个NTC温度传感器</td>
+  <td>≥2组</td>
+  <td>模组级温度均匀性验证</td>
+  <td>★★★★</td>
+</tr>
+<tr>
+  <td><strong>电池包样品</strong></td>
+  <td>与实车同款或缩比包，含BMS和热管理接口</td>
+  <td>1套</td>
+  <td>系统级加热验证；热管理回路集成测试</td>
+  <td>★★★</td>
+</tr>
+<tr>
+  <td><strong>电机+控制器总成</strong></td>
+  <td>与示范车同款PMSM+逆变器</td>
+  <td>1套</td>
+  <td>整车加热拓扑验证；台架集成</td>
+  <td>★★★★</td>
+</tr>
+</table>
+
+<h3>4.2 所需设备清单</h3>
+
+<table>
+<tr><th>设备</th><th>关键规格</th><th>用途</th></tr>
+<tr><td><strong>电化学工作站</strong></td><td>频率10μHz~10MHz，电流≥±10A，支持可编程任意波形输出</td><td>EIS全温度/SOC扫描；单电芯脉冲加热波形施加</td></tr>
+<tr><td><strong>电池充放电测试系统</strong></td><td>≥200A, ≥600V，支持自定义波形（方波/正弦），采样率≥10kHz</td><td>电芯/模组脉冲循环测试</td></tr>
+<tr><td><strong>环境试验箱</strong></td><td>-40°C~+80°C，温度波动≤±0.5°C，内部容积可容纳模组</td><td>低温环境模拟</td></tr>
+<tr><td><strong>多通道温度采集仪</strong></td><td>≥16通道，K型/T型热电偶，采样率≥1Hz</td><td>温度场分布测量</td></tr>
+<tr><td><strong>高速数据采集系统</strong></td><td>≥100kHz采样率，≥8通道同步，≥16bit分辨率</td><td>脉冲电压/电流波形精确记录</td></tr>
+<tr><td><strong>功率分析仪</strong></td><td>带宽≥2MHz，可测高频AC功率，基本精度≤0.1%</td><td>能量效率精确测量</td></tr>
+<tr><td><strong>红外热像仪</strong></td><td>分辨率≥320×240，帧率≥30Hz，热灵敏度≤0.05°C</td><td>表面温度均匀性可视化</td></tr>
+<tr><td><strong>台架测功机系统</strong></td><td>可模拟堵转工况（零转速、满转矩），含功率分析接口</td><td>电机侧脉冲加热实验</td></tr>
+<tr><td><strong>Hot Disk导热仪 / DSC</strong></td><td>导热系数测量 + 比热容测量</td><td>电芯热物性参数获取</td></tr>
+</table>
+
+<h3>4.3 实验矩阵详细设计</h3>
+
+<h4>实验一：电芯基础特性表征（必须先做，为COMSOL提供参数）</h4>
+
+<table>
+<tr><th>子实验</th><th>条件</th><th>输出参数</th></tr>
+<tr>
+  <td><strong>1.1 低温容量标定</strong></td>
+  <td>T = -30, -20, -10, 0, 10, 25°C<br>放电倍率 = 0.2C, 0.5C, 1C, 2C</td>
+  <td>实际可用容量 vs T；容量衰减曲线</td>
+</tr>
+<tr>
+  <td><strong>1.2 EIS阻抗谱</strong></td>
+  <td>T = -30, -20, -10, 0, 10, 25°C<br>SOC = 10%, 30%, 50%, 70%, 90%<br>频率: 10mHz~100kHz, 振幅10mV</td>
+  <td>R_ohm(T,SOC), R_SEI(T,SOC), R_ct(T,SOC), C_dl(T,SOC), W(T,SOC)</td>
+</tr>
+<tr>
+  <td><strong>1.3 OCV温度系数</strong></td>
+  <td>恒温量热法 / 电位法<br>SOC: 20%~100%（步长10%）<br>T: -20°C~25°C</td>
+  <td>dU/dT(SOC)——可逆熵热计算输入</td>
+</tr>
+<tr>
+  <td><strong>1.4 热物性测量</strong></td>
+  <td>Hot Disk法（导热系数）<br>DSC（比热容）</td>
+  <td>k_x, k_y, k_z（各向导热系数）<br>C_p(T)（比热容）</td>
+</tr>
+</table>
+
+<h4>实验二：单电芯脉冲加热参数扫描（验证COMSOL仿真）</h4>
+
+<table>
+<tr><th>实验参数</th><th>取值</th></tr>
+<tr><td>频率 f</td><td>100, 200, 500, 800, 1000, 1500, 2000 Hz</td></tr>
+<tr><td>电流幅值 I_amp</td><td>2C, 3C, 4C, 5C, 6C, 8C</td></tr>
+<tr><td>初始温度 T_init</td><td>-30, -20, -10°C</td></tr>
+<tr><td>波形</td><td>方波（占空比50%）、正弦波</td></tr>
+<tr><td>SOC</td><td>30%, 50%, 70%</td></tr>
+<tr><td>终止条件</td><td>T_avg ≥ 10°C 或 安全截止电压触发</td></tr>
+</table>
+
+<p><strong>每组测量项目：</strong></p>
+<ul>
+  <li>温升曲线 T(t) @ 至少5个点位（正极耳、负极耳、几何中心、上表面、下表面）</li>
+  <li>电压/电流波形 V(t), I(t)（高频采样≥10kHz）</li>
+  <li>加热总时间、总能量输入</li>
+  <li>计算：温升速率、能量效率、最大温差、加热均匀性</li>
+  <li><strong>★ 带参比电极电芯额外获取：</strong>负极电位 φ_neg(t)、正极电位 φ_pos(t)——<strong>直接验证析锂判据</strong></li>
+</ul>
+
+<h4>实验三：脉冲加热耐久性测试</h4>
+
+<table>
+<tr><th>项目</th><th>条件</th></tr>
+<tr><td>温度</td><td>-20°C</td></tr>
+<tr><td>脉冲参数</td><td>取实验二中确定的最优参数组合</td></tr>
+<tr><td>循环规程</td><td>脉冲加热至10°C → 静置 → 放回-20°C → 再加热</td></tr>
+<tr><td>循环次数</td><td>≥100次（初期摸底），目标≥500次</td></tr>
+<tr><td>每50次中间检查</td><td>标准容量测试（25°C, 1C放电）；EIS测试；拆解检查（SEM观察负极表面是否析锂）</td></tr>
+</table>
+
+<h4>实验四：模组/电池包级加热验证</h4>
+<ul>
+  <li><strong>模组级（≥4串）：</strong>每电芯中心+表面布置热电偶，验证电芯间温差（要求&lt;5°C）</li>
+  <li><strong>电池包级：</strong>验证液冷/加热回路集成；评估电机余热回收效果；全包温度场测量</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ===== 第五章 ===== -->
+<h2>五、电芯厂家咨询问题清单</h2>
+
+<h3>5.1 电化学与材料参数</h3>
+
+<table>
+<tr><th>序号</th><th>咨询问题</th><th>对应仿真输入</th></tr>
+<tr><td>1</td><td>正极材料类型（NCM111/523/622/811？LFP？）、负极材料（石墨/硅碳？）、电解液成分（溶剂体系+锂盐种类及浓度）</td><td>COMSOL材料属性定义</td></tr>
+<tr><td>2</td><td>电极配方：活性材料/导电剂/粘结剂比例、电极孔隙率、压实密度</td><td>P2D模型电极参数</td></tr>
+<tr><td>3</td><td>电极涂层厚度、集流体厚度（精确到μm）</td><td>几何建模</td></tr>
+<tr><td>4</td><td>电解液中锂离子迁移数 t_+、初始锂盐浓度 c_0</td><td>电解液传输参数</td></tr>
+<tr><td>5</td><td>正负极活性材料颗粒粒径分布（D10/D50/D90）、比表面积（BET）</td><td>粒子扩散模型</td></tr>
+<tr><td>6</td><td>SEI膜成分及厚度参考值</td><td>副反应建模</td></tr>
+<tr><td>7</td><td>该款电芯的低温充电析锂边界（最低温度—最大倍率安全曲线）</td><td>基线对比，验证脉冲加热安全窗口</td></tr>
+</table>
+
+<h3>5.2 热物性参数</h3>
+
+<table>
+<tr><th>序号</th><th>咨询问题</th></tr>
+<tr><td>8</td><td>电芯各向导热系数（面内 k_in-plane、面外 k_through-plane），如有实测数据最好</td></tr>
+<tr><td>9</td><td>电芯比热容 C_p 和密度 ρ</td></tr>
+<tr><td>10</td><td>电芯正常工作温度范围和存储温度范围</td></tr>
+</table>
+
+<h3>5.3 电性能与应用边界</h3>
+
+<table>
+<tr><th>序号</th><th>咨询问题</th></tr>
+<tr><td>11</td><td>该电芯的交流阻抗特性数据（如有），特别是不同频率下的阻抗谱</td></tr>
+<tr><td>12</td><td>最大允许脉冲电流（充电/放电方向，不同脉宽下）及其物理限制原因</td></tr>
+<tr><td>13</td><td>电芯推荐SOC使用窗口，低温下是否有额外限制</td></tr>
+<tr><td>14</td><td>电芯循环寿命数据（常温）、日历寿命数据</td></tr>
+<tr><td>15</td><td>该电芯是否已有OEM客户在整车项目中应用脉冲加热方案？如有，可分享的应用边界条件？</td></tr>
+<tr><td>16</td><td>电芯内部是否已内置PTC、NTC或加热膜？如有，规格如何？</td></tr>
+<tr><td>17</td><td><strong>能否提供≥6颗带参比电极（Li金属第三电极）的定制电芯用于实验？价格和交期？</strong></td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 第六章 ===== -->
+<h2>六、仿真阶段交付物与预期结论</h2>
+
+<h3>6.1 阶段一交付物（策略与算法开发 · M1-M6）</h3>
+
+<table>
+<tr><th>交付物</th><th>形式</th><th>核心内容</th></tr>
+<tr>
+  <td>电芯电化学-热耦合模型</td>
+  <td>COMSOL .mph文件 + 模型说明书</td>
+  <td>经验证的P2D + 3D热模型；含全参数定义和边界条件</td>
+</tr>
+<tr>
+  <td>脉冲参数敏感性分析报告</td>
+  <td>PPT / Word</td>
+  <td>f - I_amp - T_init 对温升速率、析锂风险、温度均匀性的影响规律</td>
+</tr>
+<tr>
+  <td>最优脉冲参数MAP</td>
+  <td>二维等高线图 + 查找表</td>
+  <td>不同温度和SOC下的推荐 f 和 I_amp 组合</td>
+</tr>
+<tr>
+  <td>析锂安全边界报告</td>
+  <td>图表集 + 分析文档</td>
+  <td>各温度/频率/电流组合下的负极电位分布；安全加热窗口</td>
+</tr>
+</table>
+
+<div class="highlight">
+  <p style="text-indent:0;"><strong>预期结论示例：</strong></p>
+  <p style="text-indent:0;">"在-20°C条件下，频率≥500Hz、电流≤5C的方波脉冲可保证负极电位始终&gt;0V（不析锂），同时实现≥1.2°C/min的温升速率。欧姆热占总产热65-75%，是主导加热机制。频率过低（&lt;200Hz）时负极电位在充电半周期接近0V，存在析锂风险。"</p>
+</div>
+
+<h3>6.2 阶段二交付物（拓扑设计与策略实现 · M7-M12）</h3>
+
+<table>
+<tr><th>交付物</th><th>形式</th><th>核心内容</th></tr>
+<tr><td>整车脉冲加热系统Simulink模型</td><td>.slx文件 + 模型说明书</td><td>电池包 + 电机 + 逆变器 + 控制器 + 热回路</td></tr>
+<tr><td>自适应加热控制策略</td><td>Stateflow + MATLAB代码</td><td>含状态机逻辑、PID参数整定、故障保护策略</td></tr>
+<tr><td>整车加热性能预测报告</td><td>PPT / Word</td><td>不同温度下的加热时间、能量消耗、SOC消耗预估</td></tr>
+<tr><td>热管理架构改进方案</td><td>原理图 + 分析报告</td><td>电机余热回收回路设计（电机冷却液与电池液冷回路串联）</td></tr>
+</table>
+
+<h3>6.3 阶段三交付物（集成与验证 · M13-M18）</h3>
+
+<table>
+<tr><th>交付物</th><th>形式</th><th>核心内容</th></tr>
+<tr><td>模型-实验对标报告</td><td>PPT / Word</td><td>仿真与实验的温度曲线、电压响应对比；误差分析</td></tr>
+<tr><td>修正后模型（最终版）</td><td>更新版本文件</td><td>基于实验数据校准后的COMSOL和Simulink模型</td></tr>
+<tr><td>耐久性虚拟评估报告</td><td>PPT / Word</td><td>基于加速老化实验数据的寿命预测模型</td></tr>
+<tr><td>实车冬季标定分析报告</td><td>数据分析 + PPT</td><td>实车数据与仿真预测对比；最终技术总结</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 第七章 ===== -->
+<h2>七、项目风险与难点分析</h2>
+
+<table>
+<tr><th>风险/难点</th><th>影响<br>程度</th><th>概率</th><th>缓解措施</th></tr>
+<tr>
+  <td><strong>电芯参数获取不完整</strong><br>（厂家核心参数保密）</td>
+  <td>高</td>
+  <td>中</td>
+  <td>①备选方案：通过EIS全参数辨识替代厂家参数<br>②签订NDA（保密协议），分阶段争取更多数据<br>③参考文献中同类型电芯的典型值作为初始输入</td>
+</tr>
+<tr>
+  <td><strong>参比电极电芯制作困难</strong><br>（负极电位直接测量是验证析锂的关键唯一手段）</td>
+  <td>高</td>
+  <td>高</td>
+  <td>①尽早与电芯厂家沟通定制需求（至少提前3个月）<br>②备选方案：使用三电极夹具（对电芯进行破坏性改造）<br>③间接方案：通过EIS高频特征+电压弛豫间接推断析锂</td>
+</tr>
+<tr>
+  <td><strong>COMSOL P2D模型计算量巨大</strong><br>（参数扫描需数千算例）</td>
+  <td>中</td>
+  <td>高</td>
+  <td>①使用集群/云计算并行求解（32核以上）<br>②开发降阶模型(ROM)替代高频调用<br>③合理缩减参数扫描范围（先粗扫再精扫）</td>
+</tr>
+<tr>
+  <td><strong>实车电机/控制器参数不匹配</strong><br>（仿真假设与实际硬件差异）</td>
+  <td>中</td>
+  <td>中</td>
+  <td>①尽早获取电机控制器规格书<br>②阶段二搭建HIL（硬件在环）平台验证<br>③在Simulink中设置参数容差Monte Carlo分析</td>
+</tr>
+<tr>
+  <td><strong>脉冲加热对电池老化的长期影响未知</strong></td>
+  <td>高</td>
+  <td>中</td>
+  <td>①耐久性实验必须尽早启动（与阶段二并行）<br>②从仿真端建立析锂-老化关联模型（SEI增长模型）<br>③参考已有文献中脉冲加热的寿命数据</td>
+</tr>
+<tr>
+  <td><strong>电机堵转发热管理</strong><br>（电机绕组也会产生脉冲电流下的焦耳热）</td>
+  <td>中</td>
+  <td>中</td>
+  <td>①仿真+台架验证电机温升是否可控<br>②评估是否需要主动冷却电机<br>③设计余热回收回路将电机热量用于电池加热</td>
+</tr>
+<tr>
+  <td><strong>电芯到电池包的热均匀性</strong></td>
+  <td>中</td>
+  <td>中</td>
+  <td>①COMSOL中建立模组级模型（简化电化学，保留详细热模型+热阻网络）<br>②包级实验验证（红外+热电偶矩阵）</td>
+</tr>
+<tr>
+  <td><strong>冬季实车标定窗口有限</strong><br>（每年仅1-2个月有-20°C以下低温天气）</td>
+  <td>高</td>
+  <td>高</td>
+  <td>①项目排期必须提前锁定标定窗口<br>②优先使用环境试验箱完成台架全温区验证<br>③考虑赴寒区试验场（如黑河、漠河）</td>
+</tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 第八章 ===== -->
+<h2>八、时间线与资源需求</h2>
+
+<h3>8.1 紧凑时间线（18个月）</h3>
+
+<table>
+<tr><th>时间段</th><th>仿真任务（本人）</th><th>实验任务（实验人员）</th><th>其他部门</th><th>里程碑</th></tr>
+<tr>
+  <td>M1-M2</td>
+  <td>文献调研；COMSOL模型框架搭建</td>
+  <td>电芯基础实验（EIS+容量+熵变）</td>
+  <td>电芯厂家沟通</td>
+  <td>★ 电芯参数集完成</td>
+</tr>
+<tr>
+  <td>M2-M4</td>
+  <td>COMSOL P2D+3D热耦合模型建立与初步验证</td>
+  <td>热物性测量</td>
+  <td>电机/控制器规格确认</td>
+  <td>★ COMSOL模型V1.0</td>
+</tr>
+<tr>
+  <td>M3-M5</td>
+  <td>脉冲参数敏感性分析（参数扫描）</td>
+  <td>单电芯脉冲参数扫描实验</td>
+  <td>—</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>M5-M6</td>
+  <td>模型对标修正；最优参数MAP输出</td>
+  <td>实验数据整理</td>
+  <td>—</td>
+  <td>★ 阶段一评审</td>
+</tr>
+<tr>
+  <td>M7-M9</td>
+  <td>Simulink系统级模型建立；ECM参数辨识</td>
+  <td>模组样品准备</td>
+  <td>电控：逆变器控制开发</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>M8-M10</td>
+  <td>整车系统仿真+控制策略开发</td>
+  <td>模组级脉冲加热实验</td>
+  <td>—</td>
+  <td>★ 控制策略V1.0</td>
+</tr>
+<tr>
+  <td>M9-M11</td>
+  <td>控制策略优化；HIL验证支持</td>
+  <td>—</td>
+  <td>电控：HIL台架搭建</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>M10-M12</td>
+  <td>性能预测报告</td>
+  <td>台架系统集成测试（电机+电池包）</td>
+  <td>电控+整车：台架集成</td>
+  <td>★ 阶段二评审</td>
+</tr>
+<tr>
+  <td>M13-M15</td>
+  <td>模型-实验对标</td>
+  <td>耐久性实验（与台架并行）</td>
+  <td>—</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>M14-M16</td>
+  <td>模型最终修正；对标报告</td>
+  <td>耐久性实验收尾</td>
+  <td>整车：实车改造</td>
+  <td>★ 对标报告完成</td>
+</tr>
+<tr>
+  <td>M16-M18</td>
+  <td>实车数据分析支持</td>
+  <td>实车数据采集支持</td>
+  <td>整车：冬季标定</td>
+  <td>★ 项目验收</td>
+</tr>
+</table>
+
+<h3>8.2 关键资源需求</h3>
+
+<table>
+<tr><th>资源</th><th>状态</th><th>备注/行动</th></tr>
+<tr><td>COMSOL Multiphysics（含Battery Module + LiveLink for MATLAB）</td><td>需确认</td><td>如无，需采购或借用高校license</td></tr>
+<tr><td>MATLAB/Simulink（含Simscape Electrical + Battery + Stateflow）</td><td>需确认</td><td>确认现有license是否包含所需工具箱</td></tr>
+<tr><td>高性能计算服务器/集群（≥32核，≥128GB RAM）</td><td>建议申请</td><td>用于COMSOL参数扫描并行计算，极大影响阶段一进度</td></tr>
+<tr><td>电化学工作站</td><td>需确认</td><td>如内部无，可考虑与重庆大学等高校合作</td></tr>
+<tr><td>环境试验箱（-40°C~+80°C）</td><td>需确认</td><td>确认现有设备是否满足模组级容积需求</td></tr>
+<tr><td><strong>带参比电极电芯</strong></td><td>★ 缺失</td><td>需尽快联系电芯厂家定制；建议至少提前3个月下单</td></tr>
+<tr><td>电机+控制器总成</td><td>需协调</td><td>与中重型车开发部协调获取示范车同款总成</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ===== 第九章 ===== -->
+<h2>九、工作流全景图</h2>
+
+<div class="flow-box">
+┌──────────────────────────────────────────────────────────────────┐
+│                         工作流全景图                               │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────────────┐                                        │
+│  │     电芯厂家          │                                        │
+│  │ · 提供电芯样品+参数    │                                        │
+│  │ · 定制参比电极电芯     │                                        │
+│  │ · 材料体系/电化学参数  │                                        │
+│  └──────────┬───────────┘                                        │
+│             │                                                    │
+│  ┌──────────▼───────────┐                                        │
+│  │     实验人员          │                                        │
+│  │ · EIS全温度/SOC扫描   │──────┐                                 │
+│  │ · dU/dT测量           │      │                                 │
+│  │ · 导热系数/比热容测量  │      │                                 │
+│  │ · 单电芯脉冲参数扫描   │      │                                 │
+│  │ · 模组/包加热验证      │      │                                 │
+│  │ · 耐久性循环测试       │      │                                 │
+│  └──────────┬───────────┘      │                                 │
+│             │                  │                                 │
+│  ┌──────────┼──────────────────┘                                 │
+│  │           │  参数 + 验证数据                                    │
+│  │  ┌────────▼──────────────────┐                                 │
+│  │  │       你（仿真）          │                                 │
+│  │  │                          │                                 │
+│  │  │  COMSOL:                 │                                 │
+│  │  │  ① P2D电化学模型         │                                 │
+│  │  │  ② 3D热模型耦合          │                                 │
+│  │  │  ③ 脉冲参数敏感性分析    │                                 │
+│  │  │  ④ 析锂安全边界确定      │                                 │
+│  │  │                          │                                 │
+│  │  │  MATLAB/Simulink:        │                                 │
+│  │  │  ⑤ ECM参数辨识           │                                 │
+│  │  │  ⑥ 系统级电-热联合仿真   │                                 │
+│  │  │  ⑦ 控制策略开发与优化    │                                 │
+│  │  │  ⑧ 整车加热性能预测      │                                 │
+│  │  └────────┬─────────────────┘                                 │
+│  │           │  最优参数 + 控制策略                                │
+│  │  ┌────────▼──────────────────┐                                 │
+│  │  │   电控 + 整车开发部        │                                 │
+│  │  │  · 逆变器控制实现          │                                 │
+│  │  │  · 台架集成测试            │                                 │
+│  │  │  · 实车冬季标定            │                                 │
+│  │  └───────────────────────────┘                                 │
+│                                                                  │
+│  ──→ 数据/参数流向    ──→ 交付物流向                               │
+└──────────────────────────────────────────────────────────────────┘
+</div>
+
+<h3>数据-仿真-实验闭环迭代流程</h3>
+
+<div class="box">
+  <p style="text-indent:0; text-align:center;">
+  <strong>实验数据</strong> →（参数辨识）→ <strong>仿真模型</strong> →（最优参数预测）→ <strong>实验验证</strong> →（对标修正）→ <strong>仿真模型升级</strong> →（最终策略）→ <strong>实车应用</strong>
+  </p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ===== 附录 ===== -->
+<h2>附录：COMSOL建模所需参数完整清单</h2>
+
+<table>
+<tr><th>参数类别</th><th>具体参数</th><th>获取方式</th><th>优先级</th></tr>
+<tr>
+  <td rowspan="5"><strong>几何参数</strong></td>
+  <td>L_neg, L_sep, L_pos（电极/隔膜厚度）</td>
+  <td>厂家提供 / 拆解SEM测量</td>
+  <td>★★★★★</td>
+</tr>
+<tr><td>R_particle（活性颗粒半径）</td><td>厂家提供 / SEM统计</td><td>★★★★★</td></tr>
+<tr><td>ε_neg, ε_pos, ε_sep（孔隙率）</td><td>厂家提供 / 压汞法测量</td><td>★★★★★</td></tr>
+<tr><td>电极涂层高度/宽度</td><td>厂家提供 / 拆解测量</td><td>★★★★</td></tr>
+<tr><td>集流体厚度（Cu/Al foil）</td><td>厂家提供 / 千分尺测量</td><td>★★★★</td></tr>
+<tr>
+  <td rowspan="6"><strong>电化学参数</strong></td>
+  <td>σ_s(T)（固相电子电导率）</td>
+  <td>厂家提供 + EIS高频段拟合</td>
+  <td>★★★★★</td>
+</tr>
+<tr><td>κ_e(c, T)（电解液离子电导率）</td><td>文献 + EIS拟合</td><td>★★★★★</td></tr>
+<tr><td>D_s(T)（固相锂扩散系数）</td><td>EIS低频段Warburg拟合 / GITT</td><td>★★★★★</td></tr>
+<tr><td>k_reaction(T)（反应速率常数）</td><td>EIS中频段拟合</td><td>★★★★★</td></tr>
+<tr><td>t_+（锂离子迁移数）</td><td>厂家提供 / 文献参考</td><td>★★★★</td></tr>
+<tr><td>dU/dT(SOC)（熵变系数）</td><td>恒温量热法测量</td><td>★★★★★</td></tr>
+<tr>
+  <td rowspan="4"><strong>热物性参数</strong></td>
+  <td>k_x, k_y, k_z（各向导热系数）</td>
+  <td>Hot Disk / 激光闪光法</td>
+  <td>★★★★★</td>
+</tr>
+<tr><td>C_p(T)（比热容）</td><td>DSC测量</td><td>★★★★★</td></tr>
+<tr><td>ρ（密度）</td><td>厂家提供</td><td>★★★★</td></tr>
+<tr><td>h（表面对流换热系数）</td><td>实验标定（不同风速/温度下）</td><td>★★★</td></tr>
+<tr>
+  <td rowspan="3"><strong>副反应参数</strong></td>
+  <td>R_SEI, C_SEI（SEI膜阻抗）</td>
+  <td>EIS高频段半圆拟合</td>
+  <td>★★★★</td></tr>
+<tr><td>E_eq_Li_plating（析锂平衡电位）</td><td>文献值：0 V vs Li/Li⁺</td><td>★★★★</td></tr>
+<tr><td>i_0_plating（析锂交换电流密度）</td><td>文献 / Tafel拟合</td><td>★★★</td></tr>
+<tr>
+  <td rowspan="4"><strong>验证数据</strong></td>
+  <td>不同温度充放电曲线</td>
+  <td>实验一</td>
+  <td>★★★★★</td>
+</tr>
+<tr><td>脉冲加热温升曲线</td>
+  <td>实验二</td>
+  <td>★★★★★</td></tr>
+<tr><td>负极电位曲线</td>
+  <td>实验二（参比电极电芯）</td>
+  <td>★★★★★</td></tr>
+<tr><td>加热前后容量/内阻</td>
+  <td>实验三</td>
+  <td>★★★★★</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h2>参考文献</h2>
+<ol>
+  <li>邢俊亚, 许心一, 彭杨茗, 等. 脉冲电流加热电池技术在整车上的应用[C]. 2023中国汽车工程学会年会论文集, SAE-CEC 2023-EV134: 689-694.</li>
+  <li>胡明辉. 动力电池低温快速加热技术[R]. 重庆大学, 202X.</li>
+  <li>杨莹莹, 等. 车用锂离子电池交流加热的研究[J]. 汽车工程, 2016, 38(7): 901-908.</li>
+  <li>阮海军. 低温环境下锂离子电池优化加热及充电方法研究[D]. 北京: 北京交通大学, 2019.</li>
+  <li>朱建功, 等. 车用锂离子电池低温特性与加热方法研究进展[J]. 汽车工程, 2019, 41(5): 571-582.</li>
+  <li>肖军. 新能源汽车低温电池热管理方法研究[J]. 汽车文摘, 2020, 10: 7.</li>
+</ol>
+
+<div class="footer">
+  <p>编制：前瞻技术研究部 新能源小组 | 密级：内部 | 版本：V1.0</p>
+  <p>本文档仅供内部技术评审使用，未经授权不得外传。</p>
+</div>
+
+</body>
+</html>

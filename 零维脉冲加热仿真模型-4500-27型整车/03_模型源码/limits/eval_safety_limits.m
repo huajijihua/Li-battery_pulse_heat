@@ -2,13 +2,19 @@ function safety = eval_safety_limits(p, ~, T_C, SOC, f_Hz, current_limits, spec_
 %EVAL_SAFETY_LIMITS Electrical and battery safety references for screening.
 % Spec-window and plating limits are displayed as references until calibrated
 % high-frequency cell data are available.
+% 中文说明:
+% 本函数把电气硬限制和电池安全参考边界整理成状态字段。当前只有电机/控制器
+% 电流、配置的电池高频峰值和频率上限参与硬状态判断；30s/60s规格窗口与
+% 析锂模型只作为参考提示，不能视为目标电芯已验证的BMS硬保护。
 
+    % 频率裕度。>=1表示当前频率不超过控制器参考上限。
     frequency_margin = inf;
     if isfield(p, 'f_control_max_Hz') && isfinite(p.f_control_max_Hz)
         frequency_margin = p.f_control_max_Hz / max(f_Hz, eps);
     end
     frequency_ok = frequency_margin >= 1.0;
 
+    % 电气硬限制状态: 电机RMS、峰值、电池高频峰值和频率。
     motor_rms_ok = current_limits.motor_rms_margin >= 1.0;
     motor_peak_ok = current_limits.motor_peak_margin >= 1.0;
     branch_peak_ok = current_limits.branch_peak_margin >= 1.0;
@@ -16,6 +22,9 @@ function safety = eval_safety_limits(p, ~, T_C, SOC, f_Hz, current_limits, spec_
         current_limits.current_scale < 0.999;
     electrical_ok = motor_rms_ok && motor_peak_ok && branch_peak_ok && frequency_ok;
 
+    % 电池参考边界:
+    % spec_ref来自30s/60s规格窗口；battery_ref来自简化析锂参考模型。
+    % 二者当前只用于输出margin和文字提示，不反向修改电流。
     battery_ref = calc_battery_reference_limit(p, f_Hz, T_C, SOC);
     I_branch_peak = current_limits.I_branch_peak_A;
     spec_30s_charge_margin = spec_ref.charge_30s_A / max(I_branch_peak, eps);
@@ -25,6 +34,7 @@ function safety = eval_safety_limits(p, ~, T_C, SOC, f_Hz, current_limits, spec_
     plating_reference_margin = battery_ref.plating_charge_peak_A / max(I_branch_peak, eps);
     plating_reference_ok = plating_reference_margin >= 1.0;
 
+    % 组合成人可读状态。这里的“析锂参考边界提示”只是风险提示，不是试验结论。
     status = strings(1, 0);
     if electrical_ok && ~hard_current_scaled
         status(end+1) = "电气硬限制满足";
@@ -69,12 +79,13 @@ function safety = eval_safety_limits(p, ~, T_C, SOC, f_Hz, current_limits, spec_
     safety.plating_charge_reference_A = battery_ref.plating_charge_peak_A;
     safety.battery_reference_mode = battery_ref.model;
     safety.note = ['电机/控制器电流和配置的电池高频峰值为硬限制; ', ...
-        '规格书30s/60s窗口与析锂模型当前仅作参考展示, 未作为0528目标车型硬限流。'];
+        '规格书30s/60s窗口与析锂模型当前仅作参考展示, 未作为4500-27硬限流。'];
 end
 
 function ref = calc_battery_reference_limit(p, f_Hz, T_C, SOC)
+    % 将p中的电池安全参数整理后，调用简化电池电流参考模型。
     params = build_battery_limit_params(p);
-    [limit, info] = battery_current_limit_model_0528( ...
+    [limit, info] = battery_current_limit_model( ...
         f_Hz, T_C, SOC, p.N_parallel_branch, p.C_cell_Ah, params);
 
     ref = struct();
@@ -88,6 +99,7 @@ function ref = calc_battery_reference_limit(p, f_Hz, T_C, SOC)
 end
 
 function params = build_battery_limit_params(p)
+    % 把参数库字段映射成电池参考模型需要的字段名。这里不做新物理假设。
     params = struct();
     params.limit_mode = p.battery_current_limit_mode;
     params.apply_discharge_spec_limit_in_plating_mode = ...
@@ -110,8 +122,11 @@ function params = build_battery_limit_params(p)
     params.L_for_alpha = [];
 end
 
-function [limit, info] = battery_current_limit_model_0528( ...
+function [limit, info] = battery_current_limit_model( ...
         f_Hz, T_C, SOC, N_parallel, C_cell_Ah, params)
+    % 简化电池电流边界模型:
+    % spec_window模式直接使用规格窗口；plating_adaptive模式用简化负极阻抗估算充电半周参考峰值。
+    % 审查备注: 这里的enabled_as_limit是内部模型状态，顶层并未把析锂参考作为硬限流执行。
     params = fill_default_params(params);
 
     spec = calc_spec_window(T_C, SOC, N_parallel, params);
@@ -158,6 +173,7 @@ function [limit, info] = battery_current_limit_model_0528( ...
 end
 
 function params = fill_default_params(params)
+    % 给缺失字段补默认值，保证旧调用方式不报错。默认值是粗筛占位，不是目标电芯标定值。
     if ~isfield(params, 'limit_mode')
         params.limit_mode = 'plating_adaptive';
     end
@@ -203,6 +219,8 @@ function params = fill_default_params(params)
 end
 
 function spec = calc_spec_window(T_C, SOC, N_parallel, params)
+    % 按温度插值得到30s或60s充放电规格窗口。
+    % SOC高于参考SOC时，充电窗口做经验降额；该降额仅用于风险提示。
     has_spec = isfield(params, 'current_window_T') && ...
         isfield(params, 'current_window_charge_30s') && ...
         isfield(params, 'current_window_discharge_30s') && ...
@@ -241,6 +259,9 @@ end
 
 function [I_plating_limit, info] = calc_plating_limit( ...
         f_Hz, T_C, SOC, N_parallel, C_cell_Ah, params)
+    % 析锂参考边界的简化估算:
+    % 温度影响R_ct和R_SEI，频率影响负极等效阻抗，U_e_func提供负极安全电位余量。
+    % 当前缺少目标电芯电化学标定，因此只能作为参考裕度，不作为定量安全结论。
     T_ref_K = 298.15;
     T_K = T_C + 273.15;
 

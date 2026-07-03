@@ -1,17 +1,26 @@
 function plot_pulse_heating_results(result, p, study, topology)
 %PLOT_PULSE_HEATING_RESULTS Report-oriented figures for 4500-27 screening.
+% 中文说明:
+% 本文件只负责把求解结果画成报告图，不改变物理计算结果。所有电流、功率、
+% 温升和安全状态都来自result或内部复用eval_circuit_operating_point的报告工况计算。
 
     summary = result.summary;
     results = result.results;
     sens = result.sensitivity;
     sims = result.sims;
 
+    % 图1: 原理、默认电流波形、默认温升和能量分配。
     plot_principle_and_default_case(summary, sims, p, study, topology);
+    % 图2: 当前主方案对电流幅值、频率、散热和内阻等参数的敏感性。
     plot_dual_motor_sensitivity(sens, results, p, study, topology);
+    % 图3: 单电机和双电机方案对比，以及单电机在不同幅值下的边界。
     plot_single_motor_comparison(summary, results, sens, p, study, topology);
 end
 
 function plot_principle_and_default_case(summary, sims, p, study, topology)
+    % 汇报图1:
+    % 左侧画当前L0.5等效电路；中间给出默认双电机脉冲下的电机/电池侧电流示意；
+    % 右侧和下方展示30min温升曲线与能量分配。
     figure('Name', [topology.short_name, ' 汇报图1 原理与默认工况'], ...
         'Color', 'w', 'Position', [40 40 1600 920]);
     tiledlayout(2, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
@@ -61,6 +70,9 @@ function plot_principle_and_default_case(summary, sims, p, study, topology)
 end
 
 function draw_equivalent_circuit(p, ~)
+    % 画等效电路示意:
+    % 三个电池包并联整体输出，连接双逆变器/双电机等效R-L支路。
+    % 该图用于说明模型边界，不代表完整高压盒、母线电容和三相PWM拓扑。
     axis off;
     hold on;
     title('当前L0.5模型等效电路原理');
@@ -92,6 +104,7 @@ function draw_equivalent_circuit(p, ~)
 end
 
 function draw_battery_branch(x, y, label)
+    % 画单个电池包支路符号。仅用于图示，不参与计算。
     plot([x x+0.25], [y y], 'k-', 'LineWidth', 1.2);
     plot([x+0.25 x+0.25], [y-0.45 y+0.45], 'k-', 'LineWidth', 1.8);
     plot([x+0.45 x+0.45], [y-0.25 y+0.25], 'k-', 'LineWidth', 1.8);
@@ -104,6 +117,7 @@ function draw_battery_branch(x, y, label)
 end
 
 function draw_inverter_motor_branch(x, y, label)
+    % 画逆变器和电机R-L等效支路。真实控制器的电流环、PWM死区和器件热模型不在该示意图中。
     rectangle('Position', [x-0.15, y-0.75, 1.15, 1.5], ...
         'EdgeColor', [0.15 0.35 0.65], 'LineWidth', 1.5);
     text(x+0.42, y, 'Inverter', 'HorizontalAlignment', 'center', ...
@@ -121,6 +135,7 @@ function draw_inverter_motor_branch(x, y, label)
 end
 
 function draw_inductor(x, y)
+    % 绘制电感线圈符号，仅用于报告图形表达。
     theta = linspace(0, pi, 30);
     x0 = x;
     for k = 1:5
@@ -133,6 +148,9 @@ function draw_inductor(x, y)
 end
 
 function waveform = build_default_waveform(p, study)
+    % 构造默认工况的两周期示意波形:
+    % 用简化RL响应生成单台电机电流，再按三包分流得到单包支路电流。
+    % 这是示意波形，不是开关级PWM或dq坐标闭环仿真。
     SOC = study.SOC;
     T_C = study.default_temperature_C;
     f = study.default_frequency_Hz;
@@ -142,7 +160,7 @@ function waveform = build_default_waveform(p, study)
     V_oc = p.N_series * interp1(p.ocv_soc_bp, p.ocv_cell_V, SOC, ...
         'linear', 'extrap');
     R_branch = interp2(p.R_data_SOC, p.R_data_T_C, ...
-        p.R_branch_192S1P_table_ohm, SOC, T_C, 'linear') * ...
+        p.R_branch_table_ohm, SOC, T_C, 'linear') * ...
         p.R_heat_factor_default;
     R_eq = R_branch / 3;
     R_loop = p.motor_Rs_ohm + motor_count * R_eq;
@@ -184,6 +202,8 @@ function waveform = build_default_waveform(p, study)
 end
 
 function plot_default_temperature(sims, p, summary, study)
+    % 绘制默认工况30min平均温度曲线，并标出目标温度0C。
+    % 温度来自solve_pulse_heating_case中的显式时间推进。
     hold on;
     for k = 1:numel(sims)
         sim = sims(k).data;
@@ -209,6 +229,8 @@ function plot_default_temperature(sims, p, summary, study)
 end
 
 function plot_energy_pie(summary)
+    % 绘制双电机默认方案30min能量分配:
+    % 电池发热、电机损耗、逆变器损耗和散热损失均来自summary。
     row = summary(strcmp(summary.case_id, '三包并联双电机'), :);
     energy = [row.E_battery_heat_30min_kWh, row.E_motor_loss_30min_kWh, ...
         row.E_inverter_loss_30min_kWh];
@@ -226,6 +248,9 @@ function plot_energy_pie(summary)
 end
 
 function plot_dual_motor_sensitivity(~, ~, p, study, topology)
+    % 汇报图2:
+    % 聚焦三包并联双电机主方案，分别扫描电流幅值、频率、散热边界和电池内阻倍率。
+    % 这些图用于判断趋势和优先补参方向，不代表控制器可实现性已经验证。
     figure('Name', [topology.short_name, ' 汇报图2 双电机性能敏感性'], ...
         'Color', 'w', 'Position', [60 60 1600 920]);
     tiledlayout(2, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
@@ -244,6 +269,8 @@ function plot_dual_motor_sensitivity(~, ~, p, study, topology)
 end
 
 function plot_current_sensitivity(p, study)
+    % 电流幅值敏感性:
+    % current_amplitude_scale越大，电池I^2R热源通常越强，但也更容易触发电机/MCU限流。
     amp_list = p.current_amplitude_scale_scan;
     T20 = zeros(size(amp_list));
     SOC_per_C = zeros(size(amp_list));
@@ -271,6 +298,8 @@ function plot_current_sensitivity(p, study)
 end
 
 function plot_frequency_sensitivity(p, study)
+    % 频率敏感性:
+    % 在相同电压和RL参数下，频率改变会改变电流纹波和RMS电流，从而影响电池发热。
     f_list = p.frequency_scan_Hz;
     T20 = zeros(size(f_list));
     SOC_per_C = zeros(size(f_list));
@@ -296,6 +325,8 @@ function plot_frequency_sensitivity(p, study)
 end
 
 function plot_heat_boundary_sensitivity(p, study)
+    % 散热边界敏感性:
+    % h_conv越大，散热越强，30min末温度越低。当前h_conv是粗筛占位参数。
     h_list = p.h_conv_scan_W_per_m2K;
     T20 = zeros(size(h_list));
     SOC_per_C = zeros(size(h_list));
@@ -322,6 +353,8 @@ function plot_heat_boundary_sensitivity(p, study)
 end
 
 function plot_resistance_sensitivity(p, study)
+    % 电池发热阻抗倍率敏感性:
+    % R_heat_factor用于反映高频等效阻抗可能低于1s DCR的情况。
     R_list = p.R_heat_factor_scan;
     T20 = zeros(size(R_list));
     SOC_per_C = zeros(size(R_list));
@@ -347,6 +380,8 @@ function plot_resistance_sensitivity(p, study)
 end
 
 function plot_single_motor_comparison(summary, results, sens, p, study, topology)
+    % 汇报图3:
+    % 对比三包并联单电机和双电机默认温升，并展示单电机不同电流幅值下的初始温升与限制来源。
     figure('Name', [topology.short_name, ' 汇报图3 单电机对比'], ...
         'Color', 'w', 'Position', [80 80 1450 760]);
     tiledlayout(1, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
@@ -359,6 +394,7 @@ function plot_single_motor_comparison(summary, results, sens, p, study, topology
 end
 
 function plot_single_vs_dual_temperature(summary, sens, ~)
+    % 单电机和双电机默认方案温度对比。双电机通常提供更强电池侧RMS电流和热源。
     rows = strcmp(sens.sensitivity_axis, 'R_heat_limit_matrix') & ...
         strcmp(sens.mismatch_label, 'nominal') & sens.R_heat_factor == 1 & ...
         sens.motor_rms_limit_A == 550;
@@ -380,6 +416,8 @@ function plot_single_vs_dual_temperature(summary, sens, ~)
 end
 
 function plot_single_motor_limit_scan(results, study)
+    % 单电机方案的电流幅值扫描:
+    % 只取默认温度、频率、占空比、内阻倍率和限流条件，避免把多维扫描混在一起。
     rows = strcmp(results.case_id, '三包并联单电机') & ...
         results.T_init_C == study.default_temperature_C & ...
         strcmp(results.mismatch_label, 'nominal') & results.R_heat_factor == 1 & ...
@@ -410,6 +448,7 @@ function plot_single_motor_limit_scan(results, study)
 end
 
 function annotate_soc_per_C(x, y, soc_per_C_pct)
+    % 在图上标注单位温升等效SOC消耗，帮助比较加热效率。
     for k = 1:numel(x)
         if isnan(soc_per_C_pct(k)) || isinf(soc_per_C_pct(k))
             label = '-- %/C';
@@ -423,6 +462,8 @@ end
 
 function m = simulate_report_case(p, study, f_Hz, duty, amp_scale, SOC0, ...
         R_heat_factor, motor_limit_A, h_conv)
+    % 绘图专用的轻量仿真函数:
+    % 为敏感性图快速生成30min温度、到0C时间和等效SOC。逻辑与主求解器保持同一物理口径。
     p_case = p;
     p_case.R_heat_factor_current = R_heat_factor;
     p_case.I_motor_rms_limit_A = motor_limit_A;

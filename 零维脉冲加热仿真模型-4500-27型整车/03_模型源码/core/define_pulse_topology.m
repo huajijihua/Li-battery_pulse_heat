@@ -1,64 +1,18 @@
 function topology = define_pulse_topology(topology_id)
 %DEFINE_PULSE_TOPOLOGY Returns pulse-heating architecture definitions.
+% 中文说明:
+% 本函数定义4500-27整车电池包和电机如何接入脉冲加热回路。
+% 当前只保留vehicle_4500_27，即三包并联整体输出，不假设单包可独立接入电驱。
 
     topology_id = lower(string(topology_id));
     case_template = struct('id', '', 'name', '', 'branch_count', 0, ...
         'motor_count', 0, 'type', '', 'description', '');
 
     switch topology_id
-        case "dual_branch"
-            cases = repmat(case_template, 1, 3);
-            cases(1).id = '双支路整体同步';
-            cases(1).name = '双支路电池，双电机整体同步脉冲';
-            cases(1).branch_count = 2;
-            cases(1).motor_count = 2;
-            cases(1).type = 'whole_branch_sync';
-            cases(1).description = '两个电池支路共同参与, 两台电机同步脉冲, 用于判断双支路整车架构的总加热能力、支路分流和母线压力';
-
-            cases(2).id = '单电机单支路';
-            cases(2).name = '单电机给单支路脉冲';
-            cases(2).branch_count = 1;
-            cases(2).motor_count = 1;
-            cases(2).type = 'whole_branch_sync';
-            cases(2).description = '一台电机作用于一个电池支路, 作为单个电机和单个电池支路的基础加热能力基准';
-
-            cases(3).id = '双电机单支路';
-            cases(3).name = '双电机集中给单支路脉冲';
-            cases(3).branch_count = 1;
-            cases(3).motor_count = 2;
-            cases(3).type = 'whole_branch_sync';
-            cases(3).description = '两台电机同时作用于一个电池支路, 用于判断整体同步脉冲电流不足时的集中加热能力和单支路风险';
-
-            topology = struct('id', 'dual_branch', 'name', '双支路相关方案', ...
-                'short_name', '双支路相关', 'branch_count', 2, 'cases', cases);
-
-        case "triple_branch"
-            cases = repmat(case_template, 1, 3);
-            cases(1).id = '三支路整体同步';
-            cases(1).name = '三支路电池，双电机整体同步脉冲';
-            cases(1).branch_count = 3;
-            cases(1).motor_count = 2;
-            cases(1).type = 'whole_branch_sync';
-            cases(1).description = '三个电池支路共同参与, 两台电机同步脉冲, 用于判断三支路架构下电流分散后温升是否仍有意义';
-
-            cases(2).id = '单电机单支路';
-            cases(2).name = '单电机给单支路脉冲';
-            cases(2).branch_count = 1;
-            cases(2).motor_count = 1;
-            cases(2).type = 'whole_branch_sync';
-            cases(2).description = '一台电机作用于一个电池支路, 作为单个电机和单个电池支路的基础加热能力基准';
-
-            cases(3).id = '双电机单支路';
-            cases(3).name = '双电机集中给单支路脉冲';
-            cases(3).branch_count = 1;
-            cases(3).motor_count = 2;
-            cases(3).type = 'whole_branch_sync';
-            cases(3).description = '两台电机同时作用于一个电池支路, 用于判断整体同步脉冲电流不足时的集中加热能力和单支路风险';
-
-            topology = struct('id', 'triple_branch', 'name', '三支路相关方案', ...
-                'short_name', '三支路相关', 'branch_count', 3, 'cases', cases);
-
         case "vehicle_4500_27"
+            % 当前4500-27实车约束方案:
+            % 参数表说明三个电池包并联整体输出且不可独立接入电驱，因此只评估
+            % “三包并联单电机”和“三包并联双电机”两种真实可接入边界。
             cases = repmat(case_template, 1, 2);
             cases(1).id = '三包并联单电机';
             cases(1).name = '三包并联整体输出，单电机脉冲';

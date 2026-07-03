@@ -1,9 +1,18 @@
 function result = solve_pulse_heating_case(p, study, topology)
 %SOLVE_PULSE_HEATING_CASE Runs scans and default transient simulations.
+% 中文说明:
+% 本函数是批量求解器。它完成三类输出:
+% 1) result.results: 全量参数扫描；
+% 2) result.summary: 默认工况摘要；
+% 3) result.sensitivity: 报告用敏感性汇总。
+% 所有单点物理计算都委托给eval_circuit_operating_point。
 
     result_rows = struct([]);
     row_idx = 0;
 
+    % 全量扫描:
+    % 逐一遍历拓扑方案、支路不均衡、内阻倍率、电机限流、温度、频率、
+    % 占空比和电流幅值系数。每个组合生成一行结果。
     for i_case = 1:numel(topology.cases)
         c = topology.cases(i_case);
         for i_mis = 1:numel(study.branch_mismatch_labels)
@@ -39,12 +48,15 @@ function result = solve_pulse_heating_case(p, study, topology)
 
     result = struct();
     result.results = struct2table(result_rows);
+
+    % 默认工况摘要和瞬态仿真用于报告主结论；敏感性汇总用于解释参数影响。
     [result.summary, result.sims] = build_default_summary(p, study, topology);
     result.sensitivity = build_sensitivity_summary(p, study, topology);
     result.topology = topology;
 end
 
 function row = make_result_row(p, c, study, i_mis, T_C, f_Hz, duty, op)
+    % 将一个工作点op展开成表格行。字段尽量保留工程含义，方便后续Excel筛选。
     row = struct();
     row.case_id = c.id;
     row.case_name = c.name;
@@ -107,6 +119,7 @@ function row = make_result_row(p, c, study, i_mis, T_C, f_Hz, duty, op)
 end
 
 function [summary, sims] = build_default_summary(p, study, topology)
+    % 对每个拓扑方案运行默认工况，并同时保存30min瞬态曲线。
     summary_rows = struct([]);
     sims = repmat(struct(), 1, numel(topology.cases));
 
@@ -135,6 +148,8 @@ function [summary, sims] = build_default_summary(p, study, topology)
 end
 
 function row = make_summary_row(p, c, sim, op)
+    % 将默认工况的瞬态结果和初始工作点合并成摘要行。
+    % 注意: energy_equiv_SOC是总不可逆损耗折算，不是库仑积分SOC。
     row = struct();
     row.case_id = c.id;
     row.case_name = c.name;
@@ -192,6 +207,10 @@ function row = make_summary_row(p, c, sim, op)
 end
 
 function sim = simulate_pulse_heating_case(p, study, c, mismatch, sim_cfg)
+    % 30min零维瞬态仿真:
+    % 每个时间步根据当前平均温度和SOC重新计算电气工作点，再用每支路净热功率更新支路温度。
+    % 审查备注: 当前电气分流使用mean(T_branch)插值电阻，支路温差不会反馈到分流比例。
+    % 如果后续重点分析支路热失衡，应改为每个支路分别按温度插值电阻。
     if nargin < 5
         sim_cfg = struct('frequency_Hz', study.default_frequency_Hz, ...
             'duty', study.default_duty, ...
@@ -225,6 +244,7 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch, sim_cfg)
     T_branch(1, :) = sim_cfg.T_init_C;
     SOC(1) = sim_cfg.SOC;
 
+    % 主时间循环。k对应当前时刻，k+1用显式欧拉法推进温度和等效SOC。
     for k = 1:n_steps
         op = eval_circuit_operating_point(p, c, mean(T_branch(k, :)), SOC(k), ...
             sim_cfg.frequency_Hz, sim_cfg.duty, mismatch, ...
@@ -245,6 +265,7 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch, sim_cfg)
         I_bus_rms(k) = op.I_bus_rms_A;
 
         if k < n_steps
+            % 能量积分，单位换算为kWh，便于和整车能耗/SOC口径对齐。
             dt_h = study.dt_s / 3600;
             E_battery_heat(k+1) = E_battery_heat(k) + P_battery(k) / 1000 * dt_h;
             E_motor_loss(k+1) = E_motor_loss(k) + P_motor(k) / 1000 * dt_h;
@@ -255,6 +276,10 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch, sim_cfg)
                 op.P_total_electric_W / 1000 * dt_h;
             T_branch(k+1, :) = T_branch(k, :) + heat.P_net_branch_W / ...
                 p.Cth_branch_J_per_K * study.dt_s;
+
+            % 等效SOC折算:
+            % 用总不可逆电功率消耗折算SOC下降，包含电池发热、电机损耗和逆变器损耗。
+            % 这不是BMS库仑计量SOC，因此coulombic_SOC_delta保持nan。
             E_total_kWh = c.branch_count * p.N_series * interp1( ...
                 p.ocv_soc_bp, p.ocv_cell_V, SOC(k), 'linear', 'extrap') * ...
                 p.C_branch_Ah / 1000;
@@ -291,6 +316,8 @@ function sim = simulate_pulse_heating_case(p, study, c, mismatch, sim_cfg)
 end
 
 function table_out = build_sensitivity_summary(p, study, topology)
+    % 敏感性汇总分两部分:
+    % 先扫内阻倍率和电机限流矩阵，再追加报告常用的电流幅值、频率、散热、内阻和双电机同步性扫描。
     rows = struct([]);
     row_idx = 0;
     t_eval_min = [10 20 30];
@@ -331,6 +358,7 @@ end
 
 function rows = append_report_sensitivity_rows(rows, row_idx, ...
         p, study, topology, t_eval_min)
+    % 报告敏感性扫描默认聚焦“三包并联双电机”，因为它是当前实车主方案。
     c = get_topology_case(topology, '三包并联双电机');
     mismatch = ones(1, c.branch_count);
     i_mis = 1;
@@ -384,6 +412,7 @@ end
 function [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
         c, mismatch, i_mis, t_eval_min, sensitivity_axis, f_Hz, duty, ...
         amp_scale, SOC0, R_heat_factor, motor_limit_A, h_conv, motor_sync_correlation)
+    % 追加一行报告敏感性结果。不同sensitivity_axis只改变一个主变量，其余使用默认值。
     if nargin < 17 || isempty(motor_sync_correlation)
         motor_sync_correlation = study.default_motor_sync_correlation;
     end
@@ -402,6 +431,7 @@ function [rows, row_idx] = append_one_report_row(rows, row_idx, p, study, ...
 end
 
 function c = get_topology_case(topology, case_id)
+    % 按case_id从topology中查找方案，避免报告扫描写死数组序号。
     idx = find(strcmp({topology.cases.id}, case_id), 1, 'first');
     if isempty(idx)
         error('PulseHeating:MissingTopologyCase', ...
@@ -412,6 +442,8 @@ end
 
 function row = make_sensitivity_row(p, c, study, i_mis, sim, op, t_eval_min, ...
         sensitivity_axis, sim_cfg)
+    % 将一个敏感性仿真结果整理为表格行，包含10/20/30min温度、到0C时间、
+    % 等效SOC、功率、电流、限制来源和推荐等级。
     if nargin < 9
         sim_cfg = struct('frequency_Hz', study.default_frequency_Hz, ...
             'duty', study.default_duty, ...
@@ -467,6 +499,8 @@ function row = make_sensitivity_row(p, c, study, i_mis, sim, op, t_eval_min, ...
 end
 
 function level = make_recommendation_level(op, time_to_0C_min, soc_to_0C_pct)
+    % 粗筛推荐等级:
+    % A/B/C/D只用于排序下一步验证优先级，不是安全放行结论。
     if isfinite(time_to_0C_min) && time_to_0C_min <= 20 && ...
             (isnan(soc_to_0C_pct) || soc_to_0C_pct <= 5) && ...
             op.current_limits.motor_rms_margin >= 1.0
@@ -482,6 +516,7 @@ function level = make_recommendation_level(op, time_to_0C_min, soc_to_0C_pct)
 end
 
 function p_case = apply_sensitivity_params(p, R_heat_factor, motor_rms_limit_A, h_conv)
+    % 基于基础参数p生成一个敏感性参数副本，避免修改原始p。
     p_case = p;
     p_case.R_heat_factor_current = R_heat_factor;
     p_case.I_motor_rms_limit_A = motor_rms_limit_A;
@@ -493,17 +528,17 @@ function p_case = apply_sensitivity_params(p, R_heat_factor, motor_rms_limit_A, 
 end
 
 function mismatch = get_case_mismatch(study, idx, branch_count)
+    % 根据当前方案支路数量截取阻抗不均衡系数。4500-27当前方案为三包并联。
     row = study.branch_mismatch_sets(idx, :);
     if all(abs(row - 1) < 1e-12)
         mismatch = ones(1, branch_count);
-    elseif branch_count == 2 && numel(row) >= 3
-        mismatch = [row(1), row(3)];
     else
         mismatch = row(1:branch_count);
     end
 end
 
 function t_target = estimate_target_time(t_min, T_C, T_target_C)
+    % 根据瞬态温度曲线线性插值得到达到目标温度的时间；未达到则返回inf。
     idx = find(T_C >= T_target_C, 1, 'first');
     if isempty(idx)
         t_target = inf;
@@ -519,6 +554,7 @@ function t_target = estimate_target_time(t_min, T_C, T_target_C)
 end
 
 function value = interpolate_metric_at_target(t_min, T_C, metric, T_target_C)
+    % 在达到目标温度的时刻插值得到能量或SOC等指标。
     t_target = estimate_target_time(t_min, T_C, T_target_C);
     if isinf(t_target)
         value = nan;
@@ -528,6 +564,7 @@ function value = interpolate_metric_at_target(t_min, T_C, metric, T_target_C)
 end
 
 function soc_delta_pct = estimate_energy_equiv_soc_delta_pct(p, c, SOC, E_total_kWh)
+    % 把总不可逆损耗折算为电池总可用能量占比，用于估算等效SOC消耗。
     E_branch_kWh = p.N_series * interp1(p.ocv_soc_bp, p.ocv_cell_V, ...
         SOC, 'linear', 'extrap') * p.C_branch_Ah / 1000;
     E_total_available_kWh = c.branch_count * E_branch_kWh;
@@ -535,11 +572,13 @@ function soc_delta_pct = estimate_energy_equiv_soc_delta_pct(p, c, SOC, E_total_
 end
 
 function note = soc_accounting_note()
+    % 统一解释SOC口径，避免把等效SOC误解为BMS库仑SOC。
     note = ['energy_equiv_SOC_delta为总不可逆损耗折算口径, 包含电池发热、电机损耗和逆变器损耗; ', ...
         'coulombic_SOC_delta为库仑/净Ah口径, 当前L0.5模型未估算。'];
 end
 
 function value = get_vector_value(x, idx)
+    % 安全读取支路向量，支路不存在时返回NaN，保证表格字段数量固定。
     if numel(x) >= idx
         value = x(idx);
     else
@@ -548,6 +587,7 @@ function value = get_vector_value(x, idx)
 end
 
 function judgement = make_case_judgement(op)
+    % 默认工况的中文初筛判断，用于摘要表。判断依据是温升速率和电机电流裕度。
     if op.dTdt_C_per_min >= 1.0 && ...
             op.current_limits.motor_rms_margin >= 1.0 && ...
             op.current_limits.motor_peak_margin >= 1.0

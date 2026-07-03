@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>双电机同相脉冲加热拓扑原理图</title>
+  <style>
+    :root {
+      --ink: #18202a;
+      --muted: #5f6b7a;
+      --line: #273241;
+      --bus: #f2b705;
+      --battery: #2f80ed;
+      --branch-a: #d71920;
+      --branch-b: #d71920;
+      --control: #6f42c1;
+      --heat: #e87511;
+      --panel: #f6f8fb;
+      --panel-line: #cfd7e3;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+    }
+    main {
+      width: min(1280px, calc(100vw - 48px));
+      margin: 24px auto 32px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      text-align: center;
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+    .subtitle {
+      margin: 0 0 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .figure {
+      border: 1px solid var(--panel-line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #ffffff;
+      border-radius: 6px;
+    }
+    .box {
+      fill: #ffffff;
+      stroke: var(--line);
+      stroke-width: 2;
+      rx: 8;
+    }
+    .box-soft {
+      fill: #fbfcff;
+      stroke: var(--panel-line);
+      stroke-width: 1.6;
+      rx: 8;
+    }
+    .label {
+      font-size: 18px;
+      font-weight: 700;
+      fill: var(--ink);
+    }
+    .small {
+      font-size: 13px;
+      fill: var(--muted);
+      font-weight: 500;
+    }
+    .note {
+      font-size: 14px;
+      fill: var(--ink);
+      font-weight: 600;
+    }
+    .formula {
+      font-size: 15px;
+      fill: var(--ink);
+      font-weight: 700;
+    }
+    .bus {
+      stroke: var(--bus);
+      stroke-width: 8;
+      stroke-linecap: round;
+    }
+    .wire {
+      stroke: var(--line);
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .current {
+      stroke: var(--branch-a);
+      stroke-width: 4;
+      fill: none;
+      stroke-linecap: round;
+      marker-end: url(#arrow-red);
+    }
+    .control {
+      stroke: var(--control);
+      stroke-width: 2.4;
+      fill: none;
+      stroke-dasharray: 8 7;
+      marker-end: url(#arrow-purple);
+    }
+    .heat {
+      stroke: var(--heat);
+      stroke-width: 3;
+      fill: none;
+      stroke-dasharray: 6 5;
+      marker-end: url(#arrow-orange);
+    }
+    .legend-line {
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+    .pill {
+      fill: #eef4ff;
+      stroke: #b8c8e6;
+      stroke-width: 1.3;
+      rx: 13;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>双电机同相脉冲加热系统拓扑原理图</h1>
+  <p class="subtitle">3806 6x4 BEV | CATL L324D06整车电池组 | 双CAM255PT52同相支路</p>
+
+  <section class="figure">
+    <svg viewBox="0 0 1240 740" role="img" aria-label="双电机同相脉冲加热拓扑原理图">
+      <defs>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d71920"></path>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#6f42c1"></path>
+        </marker>
+        <marker id="arrow-orange" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#e87511"></path>
+        </marker>
+      </defs>
+
+      <!-- Battery system -->
+      <rect class="box" x="55" y="225" width="245" height="190"></rect>
+      <text class="label" x="177" y="252" text-anchor="middle">整车电池组</text>
+      <text class="small" x="177" y="280" text-anchor="middle">CATL L324D06</text>
+      <text class="small" x="177" y="305" text-anchor="middle">192S2P, 约618 V, 401 kWh</text>
+      <text class="small" x="177" y="330" text-anchor="middle">4个96S1P电池包, 2串2并</text>
+      <line x1="103" y1="360" x2="252" y2="360" stroke="#2f80ed" stroke-width="5"></line>
+      <line x1="103" y1="382" x2="252" y2="382" stroke="#2f80ed" stroke-width="5"></line>
+
+      <!-- DC bus -->
+      <line class="bus" x1="325" y1="250" x2="325" y2="600"></line>
+      <text class="label" x="325" y="218" text-anchor="middle">公共直流母线</text>
+      <text class="small" x="325" y="635" text-anchor="middle">两条支路并联接入</text>
+      <line class="wire" x1="300" y1="295" x2="325" y2="295"></line>
+      <line class="wire" x1="300" y1="360" x2="325" y2="360"></line>
+
+      <!-- Branch 1 -->
+      <rect class="box" x="445" y="145" width="185" height="110"></rect>
+      <text class="label" x="537" y="188" text-anchor="middle">逆变器 1</text>
+      <text class="small" x="537" y="216" text-anchor="middle">多合一 9335020-3806-C0</text>
+      <rect class="box" x="725" y="145" width="185" height="110"></rect>
+      <text class="label" x="818" y="188" text-anchor="middle">电机 1</text>
+      <text class="small" x="818" y="216" text-anchor="middle">CAM255PT52</text>
+      <path class="current" d="M 325 250 H 445"></path>
+      <path class="current" d="M 630 200 H 725"></path>
+      <path class="wire" d="M 910 200 H 1000 V 360 H 325"></path>
+      <text class="note" x="388" y="235">I1(t)</text>
+
+      <!-- Branch 2 -->
+      <rect class="box" x="445" y="465" width="185" height="110"></rect>
+      <text class="label" x="537" y="508" text-anchor="middle">逆变器 2</text>
+      <text class="small" x="537" y="536" text-anchor="middle">多合一 9335020-3806-C0</text>
+      <rect class="box" x="725" y="465" width="185" height="110"></rect>
+      <text class="label" x="818" y="508" text-anchor="middle">电机 2</text>
+      <text class="small" x="818" y="536" text-anchor="middle">CAM255PT52</text>
+      <path class="current" d="M 325 520 H 445"></path>
+      <path class="current" d="M 630 520 H 725"></path>
+      <path class="wire" d="M 910 520 H 1000 V 360"></path>
+      <text class="note" x="388" y="505">I2(t)</text>
+
+      <!-- Control unit -->
+      <rect class="box-soft" x="445" y="305" width="465" height="110"></rect>
+      <text class="label" x="678" y="346" text-anchor="middle">脉冲加热控制策略</text>
+      <text class="small" x="678" y="374" text-anchor="middle">双逆变器同频率、同占空比、同相位输出</text>
+      <text class="small" x="678" y="397" text-anchor="middle">堵转/低速脉冲加热模式</text>
+      <path class="control" d="M 610 330 C 635 285, 620 250, 585 235"></path>
+      <path class="control" d="M 610 390 C 635 435, 620 480, 585 500"></path>
+
+      <!-- Vehicle side -->
+      <rect class="box-soft" x="980" y="285" width="205" height="150"></rect>
+      <text class="label" x="1082" y="330" text-anchor="middle">整车平台</text>
+      <text class="small" x="1082" y="362" text-anchor="middle">3806 6x4 BEV</text>
+      <text class="small" x="1082" y="389" text-anchor="middle">双电机同相参与</text>
+
+      <!-- Legend -->
+      <rect x="445" y="625" width="465" height="72" fill="#ffffff" stroke="#cfd7e3" stroke-width="1.4" rx="8"></rect>
+      <line class="legend-line" x1="475" y1="650" x2="535" y2="650" stroke="#d71920"></line>
+      <text class="small" x="550" y="655">支路脉冲电流</text>
+      <line class="legend-line" x1="675" y1="650" x2="735" y2="650" stroke="#f2b705"></line>
+      <text class="small" x="750" y="655">公共直流母线</text>
+      <line x1="475" y1="678" x2="535" y2="678" stroke="#6f42c1" stroke-width="2.4" stroke-dasharray="8 7"></line>
+      <text class="small" x="550" y="683">同步控制信号</text>
+      <line x1="675" y1="678" x2="735" y2="678" stroke="#273241" stroke-width="3"></line>
+      <text class="small" x="750" y="683">回路连接</text>
+    </svg>
+  </section>
+</main>
+</body>
+</html>
