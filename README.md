@@ -42,7 +42,7 @@ Q_bat ~= I_rms^2 * Re(Z_bat(T, SOC, f))
 8. `零维脉冲加热仿真模型-4500-27型整车/00_任务计划与资料/逆变器调幅与简单开关建模口径.md`
 9. `Simscape_脉冲加热_材料池与模型候选比较_v01.md`
 10. `车载脉冲加热技术simlink模型/05_模型说明.md`
-11. `车载脉冲加热技术simlink模型/00_任务计划与资料/规范化建模口径与缺陷修复路线_v01.md`
+11. `车载脉冲加热技术simlink模型/00_任务计划与资料/单电池包-控制器-单电机_规范化建模规划与操作步骤_v02.md`
 12. `车载脉冲加热技术simlink模型/00_任务计划与资料/接口契约_v01.md`
 13. `零维脉冲加热仿真模型-AMEsim/README.md`
 
@@ -140,12 +140,10 @@ Q_bat ~= I_rms^2 * Re(Z_bat(T, SOC, f))
 
 ## AMESim/Simulink方向
 
-2026-07-07 审计后，当前实际 Simulink/Simscape 状态为：
+2026-07-07 清理后，当前实际 Simulink/Simscape 状态为：
 
-- `车载脉冲加热技术simlink模型/02_模型/pulse_heating_single_pack_v01.slx` 是开环正弦电压 + 单 BEC + Controlled Voltage Source + PMSM 的历史基线；结构健康，但不能代表规范电池包、FOC、电流闭环或逆变器可实现性。
-- `车载脉冲加热技术simlink模型/02_模型/pulse_heating_v02.slx` 是电池包替换草稿；`model_check` 有 22 项未连接端口/线警告，不能用于仿真 KPI 或工程结论。
 - `车载脉冲加热技术simlink模型/02_模型/pulse_heating_single_pack_v03.slx` 当前为 v03-B2 供电修复版；主电池资产已改为官方默认 BEC 数据缩放的 `216S1P` 通用等效包，DC-link 约 801 V，PMSM 相电流已可形成。
-- `battery_pack_252S1P.slx` / `_lib.slx` 是 Battery Pack Builder 生成资产；v03-B2 发现默认初始化导致母线近零，当前降级为参考资产。
+- 旧 `v01`、`v02`、`battery_pack_252S1P*`、旧参数脚本和旧 KPI 脚本已从 active 目录删除，避免与当前主模型混淆；需要追溯时使用 Git 历史。
 
 后续优先事项不是扩展到多包多电机，而是先完成 P1 控制/逆变器口径收敛、调制/限幅接口和 KPI 电流语义拆分。
 

@@ -32,17 +32,15 @@
 10. `零维脉冲加热仿真模型-AMEsim/README.md`
 11. `Simscape_脉冲加热_材料池与模型候选比较_v01.md`
 12. `车载脉冲加热技术simlink模型/05_模型说明.md`
-13. `车载脉冲加热技术simlink模型/00_任务计划与资料/规范化建模口径与缺陷修复路线_v01.md`
+13. `车载脉冲加热技术simlink模型/00_任务计划与资料/单电池包-控制器-单电机_规范化建模规划与操作步骤_v02.md`
 14. `车载脉冲加热技术simlink模型/00_任务计划与资料/接口契约_v01.md`
 
 `零维脉冲加热仿真模型-AMEsim/` 当前作为后续 AMESim 主线目录预留；若只有 README，应如实记录为待建骨架目录，不得宣称已有可运行 AMESim 模型。
 
 `车载脉冲加热技术simlink模型/` 当前状态：
 
-- `pulse_heating_single_pack_v01.slx`：开环正弦电压 + 单 BEC + Controlled Voltage Source + PMSM 的历史基线，`model_check` 结构健康，但不是规范闭环模型。
-- `pulse_heating_single_pack_v03.slx`：当前 v03-B2 供电修复版，主电池资产改为官方默认 BEC 数据缩放的 `216S1P` 通用等效包，DC-link 约 801 V，闭环和直接调制均可形成 PMSM 相电流；控制器仍未完成整定。
-- `pulse_heating_v02.slx`：电池包替换草稿，`model_check` 有 22 项未连接端口/线警告，不能用于仿真 KPI 或结论。
-- `battery_pack_252S1P.slx` / `_lib.slx`：Battery Pack Builder 生成资产，v03-B2 发现默认初始化导致母线近零；当前降级为参考资产，后续可重新参数化但不是主模型硬约束。
+- `pulse_heating_single_pack_v03.slx`：当前唯一保留的主模型，v03-B2 供电修复版；主电池资产为官方默认 BEC 数据缩放的 `216S1P` 通用等效包，DC-link 约 801 V，闭环和直接调制均可形成 PMSM 相电流；控制器仍未完成整定。
+- 已删除旧版/过时资产：`pulse_heating_single_pack_v01.slx`、`pulse_heating_v02.slx`、`battery_pack_252S1P*`、旧参数脚本、旧 KPI 脚本和被 v02 规划取代的计划文档。需要追溯时使用 Git 历史，不在 active 目录并列保留。
 - 后续修改 `.slx` 前先确认研究目标、允许修改范围和验收门槛；优先修复控制/逆变器口径、限幅接口和 KPI 电流语义，不直接扩展多包多电机。
 
 ## 3. 建模定位
