@@ -27,10 +27,12 @@ function build_pulse_heating_single_pack_v03b()
     add_block("simulink/Discrete/Unit Delay", modelName + "/Iq_fb_delay", ...
         "Position", [300 525 345 555], "SampleTime", "1e-4");
 
+    diagnostic_frequency_Hz = 1250;
+    f_rad = 2*pi*diagnostic_frequency_Hz;
     add_block("simulink/Sources/Sine Wave", modelName + "/Id_ref_cmd", ...
         "Position", [90 620 145 650], ...
         "Amplitude", "20", ...
-        "Frequency", "2*pi*1250", ...
+        "Frequency", mat2str(f_rad), ...
         "Phase", "0");
     add_block("simulink/Sources/Constant", modelName + "/Iq_ref_cmd", ...
         "Position", [90 700 145 730], "Value", "0");
@@ -58,6 +60,7 @@ function build_pulse_heating_single_pack_v03b()
     addToWorkspace(modelName, "Iq_error_log", [390 690 500 720]);
     addToWorkspace(modelName, "md_cmd_log", [790 590 895 620]);
     addToWorkspace(modelName, "mq_cmd_log", [790 735 895 765]);
+    addToWorkspace(modelName, "mabc_cmd_log", [1065 640 1175 670]);
 
     add_line(modelName, "PSS_Iabc/1", "Iabc_to_IdIq_theta0/1", "autorouting", "on");
     add_line(modelName, "Iabc_to_IdIq_theta0/1", "IdIq_demux/1", "autorouting", "on");
@@ -82,6 +85,7 @@ function build_pulse_heating_single_pack_v03b()
 
     add_line(modelName, "Mdq_mux/1", "DQ_to_ModWave_theta0/1", "autorouting", "on");
     add_line(modelName, "DQ_to_ModWave_theta0/1", "SPS_ModWave/1", "autorouting", "on");
+    add_line(modelName, "DQ_to_ModWave_theta0/1", "mabc_cmd_log/1", "autorouting", "on");
 
     save_system(modelName, modelName + ".slx");
     fprintf("Built v03-B current-loop signal chain in %s.slx\n", modelName);
@@ -91,16 +95,16 @@ function addPiBranch(modelName, axisName, pos)
     x0 = pos(1);
     y0 = pos(2);
     add_block("simulink/Math Operations/Gain", modelName + "/" + axisName + "_Kp", ...
-        "Position", [x0 y0 x0+55 y0+30], "Gain", "0.02");
+        "Position", [x0 y0 x0+55 y0+30], "Gain", "0.001");
     add_block("simulink/Discrete/Discrete-Time Integrator", modelName + "/" + axisName + "_Integrator", ...
         "Position", [x0 y0+45 x0+80 y0+80], "SampleTime", "1e-4");
     add_block("simulink/Math Operations/Gain", modelName + "/" + axisName + "_Ki", ...
-        "Position", [x0+115 y0+48 x0+170 y0+78], "Gain", "0.1");
+        "Position", [x0+115 y0+48 x0+170 y0+78], "Gain", "0");
     add_block("simulink/Math Operations/Sum", modelName + "/" + axisName + "_PI_sum", ...
         "Position", [x0+215 y0+18 x0+245 y0+62], "Inputs", "++");
     add_block("simulink/Discontinuities/Saturation", modelName + "/" + axisName + "_sat", ...
         "Position", [x0+290 y0+20 x0+350 y0+60], ...
-        "UpperLimit", "0.2", "LowerLimit", "-0.2");
+        "UpperLimit", "0.95", "LowerLimit", "-0.95");
 end
 
 function wirePiBranch(modelName, axisName, errorBlock, muxBlock, muxPort)

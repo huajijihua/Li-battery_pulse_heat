@@ -77,12 +77,14 @@ function build_pulse_heating_single_pack_v03a(enableDirectModulation)
         "Position", [280 545 350 585]);
 
     if enableDirectModulation
+        diagnostic_frequency_Hz = 1250;
+        f_rad = 2*pi*diagnostic_frequency_Hz;
         add_block("simulink/Sources/Sine Wave", modelName + "/ma_cmd", ...
-            "Position", [90 500 140 530], "Amplitude", "0.05", "Frequency", "2*pi*1250", "Phase", "0");
+            "Position", [90 500 140 530], "Amplitude", "0.05", "Frequency", mat2str(f_rad), "Phase", "0");
         add_block("simulink/Sources/Sine Wave", modelName + "/mb_cmd", ...
-            "Position", [90 545 140 575], "Amplitude", "0.05", "Frequency", "2*pi*1250", "Phase", "-2*pi/3");
+            "Position", [90 545 140 575], "Amplitude", "0.05", "Frequency", mat2str(f_rad), "Phase", "-2*pi/3");
         add_block("simulink/Sources/Sine Wave", modelName + "/mc_cmd", ...
-            "Position", [90 590 140 620], "Amplitude", "0.05", "Frequency", "2*pi*1250", "Phase", "2*pi/3");
+            "Position", [90 590 140 620], "Amplitude", "0.05", "Frequency", mat2str(f_rad), "Phase", "2*pi/3");
         add_block("simulink/Signal Routing/Mux", modelName + "/ModWave_mux", ...
             "Position", [190 520 220 610], "Inputs", "3");
     end
