@@ -23,6 +23,7 @@ sccprj/
 tmp/
 temp/
 outputs/
+.satk/
 docling_output_light/
 pdf_figure_samples/
 
