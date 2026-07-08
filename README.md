@@ -2,7 +2,7 @@
 
 日期：2026-07-03
 
-更新：2026-07-07，当前主线已转为 Simulink/Simscape-first。4500-27 L0.5 目录保留为历史阶段资产；`车载脉冲加热技术simlink模型/` 是当前单电池包-控制器-单电机规范化建模工作区，但仍处于审计修复阶段。
+更新：2026-07-08，当前主线已从“手工搭建 v03 诊断模型”调整为“MathWorks 官方成熟案例骨架优先复用”。4500-27 L0.5 目录保留为历史阶段资产；`车载脉冲加热技术simlink模型/` 是通用车载脉冲加热系统仿真平台，v03 仅保留为诊断沙箱和接口语义对照。V4 三大复用基线已定死：电池用 `BatteryThermalManagementModel.slx`，控制器用 `mcb_pmsm_foc_qep_f28379d_SIUnit.slx`，电机/电驱用 `PMSMDriveThermal.slx`。V4-A 已建立 `pulse_heating_official_spine_v04.slx`，但当前只是带 `0`/`NaN` 占位的结构骨架，不是官方核心子系统已接入的行为模型；下一步按 `V4_端口级迁移详细建模计划_v01.md` 执行端口级迁移。
 
 本仓库用于整理商用车动力电池低温脉冲加热技术的资料、参数、模型、仿真结果和阶段输出。当前研究对象是车载动力电池-电机低温脉冲加热电路与系统模型，重点判断在现有商用车高压架构、电池包连接关系、电驱硬件能力和整车控制约束下，是否存在值得继续投入的工程可行窗口。
 
@@ -44,7 +44,11 @@ Q_bat ~= I_rms^2 * Re(Z_bat(T, SOC, f))
 10. `车载脉冲加热技术simlink模型/05_模型说明.md`
 11. `车载脉冲加热技术simlink模型/00_任务计划与资料/单电池包-控制器-单电机_规范化建模规划与操作步骤_v02.md`
 12. `车载脉冲加热技术simlink模型/00_任务计划与资料/接口契约_v01.md`
-13. `零维脉冲加热仿真模型-AMEsim/README.md`
+13. `车载脉冲加热技术simlink模型/00_任务计划与资料/剥离原则与参数分层规则_v01.md`
+14. `车载脉冲加热技术simlink模型/00_任务计划与资料/官方案例复用资产清单与重构路线_v01.md`
+15. `车载脉冲加热技术simlink模型/00_任务计划与资料/V4_官方案例复用建模规划_v01.md`
+16. `车载脉冲加热技术simlink模型/00_任务计划与资料/V4_端口级迁移详细建模计划_v01.md`
+17. `零维脉冲加热仿真模型-AMEsim/README.md`
 
 先完成盘点和边界复核，再决定是否修改模型或新增产物。
 
@@ -64,7 +68,7 @@ Q_bat ~= I_rms^2 * Re(Z_bat(T, SOC, f))
   4500-27 L0.5 MATLAB 粗筛模型、参数、结果和阶段报告；当前作为历史阶段资产保留
 
 车载脉冲加热技术simlink模型/
-  当前 Simulink/Simscape-first 主线，单电池包-控制器-单电机规范化建模工作区
+  当前 Simulink/Simscape-first 主线，通用脉冲加热系统平台；v03 为诊断沙箱，v04 固定复用 BatteryThermalManagementModel、MCB SI Units FOC、PMSMDriveThermal；V4-A 当前是端口迁移前的占位骨架
 
 零维脉冲加热仿真模型-3806型整车/
   已从当前轻量工作树移除；需要时从清理前快照恢复
@@ -142,10 +146,10 @@ Q_bat ~= I_rms^2 * Re(Z_bat(T, SOC, f))
 
 2026-07-07 清理后，当前实际 Simulink/Simscape 状态为：
 
-- `车载脉冲加热技术simlink模型/02_模型/pulse_heating_single_pack_v03.slx` 当前为 v03-B2 供电修复版；主电池资产已改为官方默认 BEC 数据缩放的 `216S1P` 通用等效包，DC-link 约 801 V，PMSM 相电流已可形成。
-- 旧 `v01`、`v02`、`battery_pack_252S1P*`、旧参数脚本和旧 KPI 脚本已从 active 目录删除，避免与当前主模型混淆；需要追溯时使用 Git 历史。
+- `车载脉冲加热技术simlink模型/02_模型/pulse_heating_single_pack_v03.slx` 当前为 v03-B3 诊断模型；主电池资产已改为官方默认 BEC 数据缩放的 `216S1P` 通用等效包，DC-link 约 801 V，PMSM 相电流已可形成，但不作为 V4 主线基线。
+- 旧 `v01`、`v02`、`battery_pack_252S1P*`、旧参数脚本和旧 KPI 脚本已从 active 目录删除，避免与 V4 主线混淆；需要追溯时使用 Git 历史。
 
-后续优先事项不是扩展到多包多电机，而是先完成 P1 控制/逆变器口径收敛、调制/限幅接口和 KPI 电流语义拆分。
+后续优先事项不是扩展到多包多电机，也不是继续沿 v03 手搓控制链堆功能。下一步按 `V4_官方案例复用建模规划_v01.md` 建立 `pulse_heating_official_spine_v04.slx` 工作副本：电池复用 `BatteryThermalManagementModel.slx`，控制器复用 `mcb_pmsm_foc_qep_f28379d_SIUnit.slx`，电机/电驱复用 `PMSMDriveThermal.slx`，再做堵转脉冲工况、限制接口和 KPI 电流语义适配。
 
 AMESim 当前仍是备选骨架目录，不是已建成主模型。若后续进入 `零维脉冲加热仿真模型-AMEsim/`，应先建立注册表和接口契约：
 
