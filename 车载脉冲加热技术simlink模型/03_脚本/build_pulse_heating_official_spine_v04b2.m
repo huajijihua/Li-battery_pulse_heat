@@ -139,6 +139,36 @@ function copyCoreSubsystems(driveSubsys, srcModel)
         end
         add_block(src, dst);
     end
+
+    restoreInverterDCBusConnections(driveSubsys + "/Three-phase inverter");
+end
+
+function restoreInverterDCBusConnections(invPath)
+%RESTOREINVERTERDCBUSCONNECTIONS 补全逆变器 DC+/DC- 到 3 个半桥的物理连接。
+% add_block 复制含 PMIOPort 的子系统时，Simulink 不保留 ConnectionPort 到
+% 多个 IGBT 端口的全部物理连接线。本函数在复制后补全 DC+ -> B(H).C 和
+% DC- -> B(L).E 两条连接，使三个半桥共享同一 DC 母线节点。
+
+    plusH  = getSimulinkBlockHandle(invPath + "/+");
+    minusH = getSimulinkBlockHandle(invPath + "/-");
+    bhH    = getSimulinkBlockHandle(invPath + "/IGBT B(H)");
+    blH    = getSimulinkBlockHandle(invPath + "/IGBT B(L)");
+
+    plusPH  = get_param(plusH,  "PortHandles");
+    minusPH = get_param(minusH, "PortHandles");
+    bhPH    = get_param(bhH,    "PortHandles");
+    blPH    = get_param(blH,    "PortHandles");
+
+    tryAddPhysicalLine(invPath, plusPH.RConn(1),  bhPH.RConn(1));
+    tryAddPhysicalLine(invPath, minusPH.RConn(1), blPH.RConn(2));
+end
+
+function tryAddPhysicalLine(subsysPath, srcPort, dstPort)
+%TRYADDPHYSICALLINE 尝试添加物理连接线，若端口已被占用则跳过。
+    try
+        add_line(subsysPath, srcPort, dstPort, "autorouting", "on");
+    catch
+    end
 end
 
 function connectDCPath(driveSubsys)
