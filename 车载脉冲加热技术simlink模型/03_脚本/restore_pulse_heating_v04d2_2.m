@@ -32,6 +32,7 @@ function restore_pulse_heating_v04d2_2(overwrite)
     restoreDriveCurrentKpi(modelName);
     restoreControlDutyKpiAndPwm(modelName);
     restoreTopLevelTerminators(modelName);
+    updateV4D22Annotations(modelName);
 
     set_param(modelName, "StopTime", "1");
     save_system(modelName, modelPath, "OverwriteIfChangedOnDisk", true);
@@ -405,6 +406,58 @@ function restoreTopLevelTerminators(modelName)
     add_block("simulink/Sinks/Terminator", modelName + "/Terminate_SystemKPI");
     add_line(modelName, "KPI_And_Logging/1", "Terminate_LimitStatus/1", "autorouting", "on");
     add_line(modelName, "KPI_And_Logging/2", "Terminate_SystemKPI/1", "autorouting", "on");
+end
+
+function updateV4D22Annotations(modelName)
+    rootText = "V4-D2.2 official-example pulse heating spine" + newline + ...
+        "Battery: BatteryThermalManagementModel battery pack/coolant skeleton restored" + newline + ...
+        "Controller: MCB SI Units FOC with V4 drive parameter adaptation" + newline + ...
+        "Drive: PMSMDriveThermal inverter/PMSM/thermal boundary with D2.1 DC bus repair" + newline + ...
+        "Command/KPI: stall pulse Idq_ref, LimitStatus(10), SystemKPI(24), partial numeric current/duty KPI" + newline + ...
+        "Limits: I_dc/P_dc/V_pack/I_pack and physical battery-to-inverter DC link remain UNKNOWN/NaN" + newline + ...
+        "Next step: V4-D3 physical DC-link closure, DC sensors, and loss calculations.";
+    replaceAnnotation(modelName, rootText, [35 40 900 175]);
+
+    ctrl = modelName + "/MCB_SIUnits_FOC_Controller";
+    ctrlText = "V4-D2.2 MCB FOC controller boundary" + newline + ...
+        "Official reference: mcb_pmsm_foc_qep_f28379d_SIUnit.slx" + newline + ...
+        "Copied: Control_System (Closed Loop Control + Open Loop Start-Up + SVPWM)" + newline + ...
+        "Feedback: Feedbacks_sim -> UnitDelay -> Demux -> Iab_meas + Pos + EnClosedLoop" + newline + ...
+        "Gate: Duty_abc(3x1) -> PWM_Carrier comparison -> complementary 6 gate -> UnitDelay -> Duty_Cycles" + newline + ...
+        "Params: PMSMDriveThermal Rs/Ld/Lq/N/PM/J/Ke/Kt applied; PI gains recalculated for V4 drive" + newline + ...
+        "ControlKPI = [tracking_NaN; modulation_index; duty_sat_flag; enable=1; status=6]";
+    replaceAnnotation(ctrl, ctrlText, [35 450 860 585]);
+
+    drive = modelName + "/PMSMDriveThermal_Inverter_And_Motor";
+    driveText = "V4-D2.2 drive boundary (PMSMDriveThermal port-level migration)" + newline + ...
+        "Official reference: PMSMDriveThermal.slx" + newline + ...
+        "Copied: Three-phase inverter, PMSM, Thermal model, Encoder, Sensing currents, Scopes" + newline + ...
+        "DC path: temporary 48 V Battery_DC_Source -> inverter +/-; physical battery DC link remains open" + newline + ...
+        "Gate path: Duty_Cycles(6x1) -> inverter G (6 IGBT gates); DC bus topology repaired for all three half-bridges" + newline + ...
+        "Feedbacks_sim = [i_abc(3); w_motor; theta; V_dc] (6x1)" + newline + ...
+        "InverterDCFeedback = [V_dc; I_dc(NaN); P_dc(NaN); status=1]" + newline + ...
+        "DriveKPI = [I_phase_rms; I_phase_peak; P_cu(NaN); P_iron(NaN); P_inv(NaN); T_stator; T_rotor; status=6]";
+    replaceAnnotation(drive, driveText, [35 600 880 750]);
+end
+
+function replaceAnnotation(parent, text, position)
+    oldHandles = find_system(parent, "FindAll", "on", "SearchDepth", 1, "Type", "annotation");
+    for idx = numel(oldHandles):-1:1
+        try
+            delete(oldHandles(idx));
+        catch
+        end
+    end
+
+    oldObjects = find_system(parent, "SearchDepth", 1, "Type", "Annotation");
+    for idx = numel(oldObjects):-1:1
+        try
+            delete(oldObjects(idx));
+        catch
+        end
+    end
+    annotation = Simulink.Annotation(parent, text);
+    annotation.Position = position;
 end
 
 function clearSubsystemContents(subsystemPath, keepPorts)
