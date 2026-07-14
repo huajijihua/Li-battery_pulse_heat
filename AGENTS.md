@@ -1,8 +1,8 @@
 # agentwork_codex_0509 项目级 Agent 规则
 
-日期：2026-07-08
+日期：2026-07-14
 
-更新：2026-07-08：已执行参数来源剥离，`车载脉冲加热技术simlink模型/` 定位改为通用车载脉冲加热系统仿真平台。公司/历史/产品参数不再进入默认模型。参数剥离不等于剥离 MathWorks 官方案例；后续主线改为官方成熟案例骨架优先，v03 仅保留为诊断沙箱。V4 三大复用基线已定死：电池用 `BatteryThermalManagementModel.slx`，控制器用 `mcb_pmsm_foc_qep_f28379d_SIUnit.slx`，电机/电驱用 `PMSMDriveThermal.slx`。V4-A 已建立 `pulse_heating_official_spine_v04.slx`，但当前只是带 `0`/`NaN` 占位的结构骨架和来源追溯壳，不是官方核心子系统已接入的行为模型。下一步按 `车载脉冲加热技术simlink模型/00_任务计划与资料/V4_端口级迁移详细建模计划_v01.md` 做端口级迁移。旧 v01/v02、`battery_pack_252S1P*` 和旧参数/KPI 脚本不恢复到 active 默认路径。
+更新：2026-07-14：v03 诊断沙箱模型和脚本已归档至 `车载脉冲加热技术simlink模型/00_任务计划与资料/归档/v03_诊断沙箱/`，不再进入 active 路径。当前唯一 active 模型为 `pulse_heating_official_spine_v04.slx`（V4-D2.2 设备适配修复版）。更新：2026-07-08：已执行参数来源剥离，`车载脉冲加热技术simlink模型/` 定位改为通用车载脉冲加热系统仿真平台。公司/历史/产品参数不再进入默认模型。参数剥离不等于剥离 MathWorks 官方案例；后续主线改为官方成熟案例骨架优先。V4 三大复用基线已定死：电池用 `BatteryThermalManagementModel.slx`，控制器用 `mcb_pmsm_foc_qep_f28379d_SIUnit.slx`，电机/电驱用 `PMSMDriveThermal.slx`。旧 v01/v02、`battery_pack_252S1P*` 和旧参数/KPI 脚本不恢复到 active 默认路径。
 
 更新：2026-07-07：当前低温脉冲加热主线已从 4500-27 L0.5 粗筛转为 Simulink/Simscape-first 规范化建模。`零维脉冲加热仿真模型-4500-27型整车/` 标记为历史阶段资产，主要用于参数、KPI、方程口径和阶段结论继承。`车载脉冲加热技术simlink模型/` 是当前单电池包-控制器-单电机建模工作区，但现有 `.slx` 尚未形成可作为 L1 结论依据的闭环模型。
 
@@ -41,10 +41,10 @@
 
 `车载脉冲加热技术simlink模型/` 当前状态：
 
-- `pulse_heating_single_pack_v03.slx`：当前唯一保留的 v03 诊断模型，v03-B3 供电修复和控制审计版；主电池资产为官方默认 BEC 数据缩放的 `216S1P` 通用等效包，DC-link 约 801 V，闭环和直接调制均可形成 PMSM 相电流；控制器仍未完成整定，不作为 V4 主线基线。
-- `pulse_heating_official_spine_v04.slx`：V4-B3 MCB FOC 控制器迁移工作副本；电驱边界含官方 `Three-phase inverter`(6 IGBT)、`PMSM`、`Thermal model`、`Encoder`、`Sensing currents`；控制器边界含官方 `Control_System`（`Closed Loop Control`+`SVPWM`）；反馈适配、3 duty->6 gate 适配器和参数覆盖已连通，`model_check(all)` healthy，0.001 s 烟测通过。Battery 为官方 48V 临时 DC 源；`I_dc`/`P_dc`/`I_rms`/`I_peak`/`P_cu`/`P_iron`/`P_inv` 仍为 NaN；电池和能量路径尚未接入；PI 增益为 MCB 默认值未整定。不是行为模型。
+- `pulse_heating_official_spine_v04.slx`：V4-D2.2 设备适配修复工作副本，当前唯一 active 模型。电驱边界含官方 `Three-phase inverter`(6 IGBT)、`PMSM`、`Thermal model`、`Encoder`、`Sensing currents`；控制器边界含官方 `Control_System`（`Closed Loop Control`+`SVPWM`）；电池边界含官方 `Battery_pack`、`Coolant_control`、`Controlled_Current_Source`；反馈适配、3 duty->6 gate 适配器、参数覆盖和 PI 增益重计算已连通，`model_check(all)` healthy，0.001 s 烟测通过。DC-link 为信号级桥接；`I_dc`/`P_dc`/`V_pack`/`I_pack` 仍为 NaN；电驱仍用临时 48V Battery_DC_Source；DC 电压等级失配（电池包 ~66V vs 控制器 48V）待物理 DC-link 闭合时解决。不是行为模型。
+- `pulse_heating_single_pack_v03.slx`：已归档至 `00_任务计划与资料/归档/v03_诊断沙箱/`（2026-07-14），不再进入 active 路径。
 - 已删除旧版/过时资产：`pulse_heating_single_pack_v01.slx`、`pulse_heating_v02.slx`、`battery_pack_252S1P*`、旧参数脚本、旧 KPI 脚本和被取代的计划文档。需要追溯时使用 Git 历史，不在 active 目录并列保留。
-- 后续不再沿 v03 手搓控制链继续堆功能。V4 按 `V4_建模主计划_v01.md` 推进：下一步是 MCB FOC 控制器迁移，然后电池迁移和 DC-link 能量路径闭合。旧 v01/v02、`battery_pack_252S1P*` 和旧参数/KPI 脚本不需要移回。
+- 后续不再沿 v03 手搓控制链继续堆功能。V4 按 `V4_建模主计划_v01.md` 推进：下一步是 DC-link 物理闭合、DC 传感器接入和损耗审计（V4-D3 起）。旧 v01/v02、`battery_pack_252S1P*` 和旧参数/KPI 脚本不需要移回。
 - 2026-07-08 已执行参数来源剥离：公司/历史/产品参数不进入默认模型。参数分层规则详见 `车载脉冲加热技术simlink模型/00_任务计划与资料/剥离原则与参数分层规则_v01.md`。
 
 ## 3. 建模定位
