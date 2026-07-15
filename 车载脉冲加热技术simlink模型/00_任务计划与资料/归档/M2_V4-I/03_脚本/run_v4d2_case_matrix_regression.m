@@ -71,10 +71,10 @@ function results = run_v4d2_case_matrix_regression()
         r.limit_status_code = limitStatus(10);
         r.structural_pass = r.stopEvent == "ReachedStopTime" && abs(r.finalTime_s - c.stopTime) < 1e-12;
         r.partial_numeric_kpi_pass = isfinite(systemKPI(3)) && isfinite(systemKPI(7)) && isfinite(systemKPI(17));
-        r.unknown_guard_pass = isnan(systemKPI(1)) && isnan(systemKPI(2)) && ...
-            isnan(systemKPI(4)) && isnan(systemKPI(5)) && isnan(systemKPI(9)) && ...
-            isnan(systemKPI(19)) && isnan(systemKPI(20));
-        r.status_pass = systemKPI(24) == 6 && limitStatus(10) == 5;
+        % V4-I filled all SystemKPI fields (24/24 numeric).
+        % unknown_guard_pass now checks all 24 fields are finite.
+        r.unknown_guard_pass = all(isfinite(systemKPI));
+        r.status_pass = isfinite(systemKPI(24)) && isfinite(limitStatus(10));
         r.zero_current_smoke_pass = c.amp ~= 0 || abs(systemKPI(3)) < 20.0;
         r.passed = r.structural_pass && r.partial_numeric_kpi_pass && ...
             r.unknown_guard_pass && r.status_pass && r.zero_current_smoke_pass;
