@@ -2,7 +2,7 @@
 
 日期：2026-07-16
 
-本目录是车载低温脉冲加热系统工程建模工作区。当前阶段为 **M4-01 结构恢复和电池侧测量骨架已完成，下一步是 DC-link 语义、BatteryLoad 和能量账本审计**。
+本目录是车载低温脉冲加热系统工程建模工作区。当前阶段为 **M4-01 的 DC-link 语义、BatteryLoad 清理、窗口 RMS 和能量账本结构审计已完成；下一步是参数来源契约与最小 Reference / Platform 编译验证**。
 
 ## 1. 当前状态
 
@@ -12,7 +12,8 @@
 4. `归档/M2_V4-I/` 只作为结构、接口、参数冲突和风险的只读证据；不得把其参数、拓扑、官方资产选择或脚本判据自动继承为 M3 默认值。活动 V4 模型与归档证据不能混为一类。
 5. v03、L0.5、旧项目管理快照和旧材料池均已归档。历史证据可按需读取，不进入默认阅读顺序、默认参数或现行执行路线。
 6. 阶段 4 顶层规划冻结版为 `00_项目管理/M3_顶层建模规划_v02.md`；M4-00 首轮资料复核形成的两份交付物作为证据保留，M4-01 当前记录为 `00_项目管理/M4-01_结构恢复与能量账本准备_v01.md`。
-7. 当前活动 V4 已在 `DC_Link_And_Inverter_Interface` 内用 `Connection Label` 建立 `I_batt_meas/V_batt_meas` 测量骨架，`BatteryDC=[V_batt,I_batt,T_pack,SOC]` 已读回；root、`blk_14` 和 `blk_20` 结构检查为 `healthy`，但尚未形成可运行设备配置或工程结论。
+7. 当前活动 V4 已在 `DC_Link_And_Inverter_Interface` 内用 `Connection Label` 建立 `I_batt_meas/V_batt_meas` 测量骨架，`BatteryDC=[V_batt,I_batt,T_pack,SOC]` 已读回；退役的 `BatteryLoad` 输入、输出和终端已删除。`Compute_I_rms_V4G` 已采用实际时间窗口，`Energy_Balance_Audit` 与 `SystemKPI(44)` 已建立未知项感知的字段骨架。保存重载后 root、`blk_14`、`blk_20` 和 `blk_35` 均为 `healthy`，但 `HVPath_R_PLACEHOLDER`、`DCLink_C_PLACEHOLDER`、RMS 窗口和热/储能字段仍阻断可运行配置及工程结论。
+8. root 级 `System_Audit` 是无端口审计支撑层，包含 `RMS_And_Measurement_Audit`、`Energy_And_Thermal_Audit` 和 `Battery_Envelope_Screening`，通过既有 `Goto/From` 标签采集和发布审计字段，不增加主物理能量路径。`cellAH_param=27`、`R_pack=0.1785`、`Ron=0.001`、`Vf=0.8` 及包线/析锂代理阈值尚未通过参数来源契约，只能作为候选筛查或估算输入，不得形成设备包线、已验证热损耗、析锂安全或限流结论。
 
 ## 2. 唯一活动入口
 
