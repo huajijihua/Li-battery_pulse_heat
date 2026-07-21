@@ -1,8 +1,25 @@
-function results = runM402BCompleteLedgerSensitivity(runMode)
+function results = runM402BCompleteLedgerSensitivity(runMode, numWorkers)
 % Run the M4-02B Reference / Platform complete-ledger sensitivity matrix.
+%
+% The scenario scan runs on a parallel pool when more than one scenario is
+% selected and the Parallel Computing Toolbox is available. parsim loads the
+% model on each worker and runs an independent SimulationInput, so the
+% non-destructive parameter injection in applyScenario is parallel-safe.
+%
+%   runM402BCompleteLedgerSensitivity("all")        % default 2 workers
+%   runM402BCompleteLedgerSensitivity("all", 4)     % up to 4 workers (cap)
+%   runM402BCompleteLedgerSensitivity("all", 1)     % force serial (no pool)
+%
+% parsim loads the SAVED model on workers; save the model before running if it
+% has unsaved edits. Pool is conservative: default 2 workers, hard cap 4
+% (requests above 4 are clipped). Parallelism is entirely script-side; the
+% model is never modified for the sake of parallel execution.
 
 if nargin < 1
     runMode = "all";
+end
+if nargin < 2
+    numWorkers = [];
 end
 
 runMode = string(runMode);
@@ -11,7 +28,8 @@ assert(bdIsLoaded(modelName), ...
     'Load the active V4 model before running the M4-02B sensitivity matrix.');
 
 scriptDir = fileparts(mfilename('fullpath'));
-resultsDir = fullfile(fileparts(scriptDir), '04_仿真结果');
+modelRoot = fileparts(scriptDir);
+resultsDir = fullfile(modelRoot, '04_仿真结果');
 if ~isfolder(resultsDir)
     mkdir(resultsDir);
 end
@@ -21,15 +39,49 @@ paths = resolveBlockPaths(modelName);
 scenarios = createScenarios();
 
 [scenarioIndices, enforceLedgerAssertions] = selectScenarios(scenarios, runMode);
+selectedScenarios = scenarios(scenarioIndices, :);
+nScen = height(selectedScenarios);
 
-records = repmat(emptyRecord(), numel(scenarioIndices), 1);
-for k = 1:numel(scenarioIndices)
-    scenario = scenarios(scenarioIndices(k), :);
-    in = Simulink.SimulationInput(modelName);
-    in = applyScenario(in, modelName, paths, scenario);
-    out = sim(in);
-    records(k) = collectRecord(out, scenario, enforceLedgerAssertions);
+nWorkers = resolveWorkerCount(numWorkers, nScen);
+usePar = (nScen > 1) && (nWorkers > 1) && license('test', 'Distrib_Computing_Toolbox');
+
+records = repmat(emptyRecord(), nScen, 1);
+tStart = tic;
+
+if usePar
+    pool = ensurePool(nWorkers);
+    % Put the model file on the client path so parsim transfers it to workers.
+    % Parallel-side setup only; the model itself is never modified.
+    modelDir = fullfile(modelRoot, '02_模型');
+    addpath(modelDir);
+    fprintf('M4-02B parallel: %d scenarios on %d workers (parsim).\n', nScen, pool.NumWorkers);
+    simIn = cell(1, nScen);
+    for k = 1:nScen
+        in = Simulink.SimulationInput(modelName);
+        simIn{k} = applyScenario(in, modelName, paths, selectedScenarios(k, :));
+    end
+    simOut = parsim([simIn{:}], 'ShowProgress', 'on', 'UseFastRestart', 'off');
+    for k = 1:nScen
+        simout = simOut(k);
+        if ~isempty(simout.ErrorMessage)
+            error('Scenario %s simulation failed: %s', ...
+                char(selectedScenarios.Scenario_ID(k)), simout.ErrorMessage);
+        end
+        records(k) = collectRecord(simout, selectedScenarios(k, :), enforceLedgerAssertions);
+    end
+else
+    fprintf('M4-02B serial: %d scenarios.\n', nScen);
+    for k = 1:nScen
+        scenario = selectedScenarios(k, :);
+        in = Simulink.SimulationInput(modelName);
+        in = applyScenario(in, modelName, paths, scenario);
+        out = sim(in);
+        records(k) = collectRecord(out, scenario, enforceLedgerAssertions);
+        fprintf('[%d/%d] done %s\n', k, nScen, scenario.Scenario_ID);
+    end
 end
+
+fprintf('M4-02B scan complete: %d scenarios in %.1f min.\n', nScen, toc(tStart) / 60);
 
 results = struct2table(records);
 if enforceLedgerAssertions
@@ -39,6 +91,35 @@ if runMode == "preflight"
     verifyPreflight(results);
 elseif runMode == "all"
     writetable(results, csvPath);
+end
+end
+
+function n = resolveWorkerCount(numWorkers, nScen)
+% Conservative pool sizing: default 2 workers, hard cap at 4. Keeps the machine
+% responsive and avoids memory/license pressure; the cap is deliberate and
+% overrides larger requests. nScen bounds it for small batches.
+DEFAULT_POOL = 2;
+MAX_POOL = 4;
+if isempty(numWorkers)
+    n = DEFAULT_POOL;
+else
+    n = round(numWorkers);
+end
+n = min(n, MAX_POOL);
+n = max(1, n);
+n = min(n, nScen);
+end
+
+function pool = ensurePool(nWorkers)
+pool = gcp('nocreate');
+if ~isempty(pool) && pool.NumWorkers ~= nWorkers
+    fprintf('Existing pool has %d workers; closing to create a %d-worker pool.\n', ...
+        pool.NumWorkers, nWorkers);
+    delete(pool);
+    pool = gcp('nocreate');
+end
+if isempty(pool)
+    pool = parpool('local', nWorkers);
 end
 end
 
